@@ -1,14 +1,14 @@
 <?php
 require_once __DIR__. "/logMessageCodes.php";
+require_once __DIR__. "/logMessage.php";
 
 class logger
 {
     private $logFile = '/tmp/logger.log';
 
-    public function __construct($logFile = null)
+    public function __construct($logFile)
     {
-        if($logFile !== null) $this->logFile = $logFile;
-        elseif(defined('SERVICE_LOGFILE')) $this->logFile = SERVICE_LOGFILE;
+        $this->logFile = $logFile;
     }
 
     public function log($message, $code = '0', $source = 'unknown', $filename = null)

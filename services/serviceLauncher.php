@@ -7,10 +7,9 @@
  *
  */
 
-if(!defined('BASE_PATH')) define('BASE_PATH', realpath(dirname(__FILE__).  '/../'). '/');
-if(!defined('DEFAULT_DATASET')) define('DEFAULT_DATASET', 'serviceController');
-if(!defined('SERVICE_LOGFILE')) define('SERVICE_LOGFILE', '/tmp/serviceService.log');
-require_once __DIR__. '/../config/base.php';
+set_include_path(get_include_path(). PATH_SEPARATOR. __DIR__ . PATH_SEPARATOR. realpath(__DIR__. "/../library"));
+require_once 'logger.php';
+require_once 'serviceController.php';
 
 $dir = getenv("SERVICE_CLASS_PATH");
 if(!$dir)

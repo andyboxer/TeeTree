@@ -7,6 +7,8 @@
  *
  */
 
+require_once('serviceMessage.php');
+
 class serviceWorker
 {
     // Gap between min and max should be at least twice the maximum no. of concurrent service instances required

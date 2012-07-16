@@ -7,6 +7,8 @@
  *
  */
 
+require_once('serviceMessage.php');
+
 class serviceClient
 {
     protected $serviceHost;

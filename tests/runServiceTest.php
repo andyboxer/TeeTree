@@ -7,10 +7,9 @@
  *
  */
 
-if(!defined('CACHED_OBJECT_NO_CACHE')) define('CACHED_OBJECT_NO_CACHE', false);
-if(!defined('BASE_PATH')) define('BASE_PATH', realpath(dirname(__FILE__).  '/../'). '/');
-if(!defined('DEFAULT_DATASET')) define('DEFAULT_DATASET', 'unittest');
-require_once __DIR__. '/../config/base.php';
+set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../services"). PATH_SEPARATOR. realpath(__DIR__. "/../library"));
+require_once 'serviceController.php';
+require_once 'serviceClient.php';
 
 // set a port for the service connection
 $testPort = 10700;
@@ -108,7 +107,7 @@ if(serviceController::pingServer("localhost", $testPort))
         print('ERROR:'. $ex->getMessage());
     }
     // shut down the local service
-    //serviceController::stopServer("localhost", $testPort);
+    serviceController::stopServer("localhost", $testPort);
 }
 
 ?>

@@ -7,6 +7,10 @@
  *
  */
 
+require_once('serviceListener.php');
+require_once('logger.php');
+require_once('serviceMessage.php');
+
 class serviceController
 {
     private $listeners = array();
