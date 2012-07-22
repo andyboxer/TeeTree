@@ -10,6 +10,7 @@
 set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../services"). PATH_SEPARATOR. realpath(__DIR__. "/../library"));
 require_once 'serviceController.php';
 require_once 'serviceClient.php';
+require_once 'utils.php';
 
 // set a port for the service connection
 $testPort = 10700;
@@ -88,14 +89,14 @@ if(serviceController::pingServer("localhost", $testPort))
         // now for some parallel processing
         // create and call the same object and method several times, each object instantiated will represent a different remote object
         // and each call will execute consecutively
-        for($loop = 0; $loop < 30; $loop++)
+        for($loop = 0; $loop < 5; $loop++)
         {
             $services[] = $service = new testServiceRepeater($loop);
             $service->callNoWait("doLongRunning", "consecutive:". $loop);
         }
 
         // now gather the responses from the above calls, the reads here will block until all threads have returned
-        for($loop = 0; $loop < 30; $loop++)
+        for($loop = 0; $loop < 5; $loop++)
         {
             $results[] = $services[$loop]->getLastResponse();
         }
@@ -106,8 +107,6 @@ if(serviceController::pingServer("localhost", $testPort))
     {
         print('ERROR:'. $ex->getMessage());
     }
-    // shut down the local service
-    serviceController::stopServer("localhost", $testPort);
 }
 
 ?>

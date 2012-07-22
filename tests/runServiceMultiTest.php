@@ -6,15 +6,16 @@
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
+set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../services"). PATH_SEPARATOR. realpath(__DIR__. "/../library"));
+require_once 'serviceController.php';
+require_once 'multi_command.php';
 
-if(!defined('CACHED_OBJECT_NO_CACHE')) define('CACHED_OBJECT_NO_CACHE', false);
-if(!defined('BASE_PATH')) define('BASE_PATH', realpath(dirname(__FILE__).  '/../'). '/');
-if(!defined('DEFAULT_DATASET')) define('DEFAULT_DATASET', 'unittest');
-require_once __DIR__. '/../config/base.php';
+// set a port for the service connection
+$testPort = 10700;
 
 $multi = new multi_command();
 
-for($i = 0; $i < 500; $i++)
+for($i = 0; $i < 20; $i++)
 {
    $command = "/usr/local/zend/bin/php ". __DIR__. "/runServiceTest.php";
    $multi->add_command($command);

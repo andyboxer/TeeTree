@@ -17,6 +17,7 @@ class serviceListener
     private static $serviceController;
     private static $serviceId = 0;
 
+
     public function __construct($controller, $port)
     {
         self::$serviceController = $controller;
@@ -37,23 +38,31 @@ class serviceListener
         }
     }
 
+    private static function set_service_id()
+    {
+        do
+        {
+            $service_id = self::$serviceId++;
+            $port = serviceController::THREAD_PORT_MIN + $service_id;
+            $in_use = utils::port_in_use($port);
+        }while($in_use);
+        return $service_id;
+    }
+
+
     public static function eventAccept($socket, $flag, $base)
     {
-        self::$serviceId += 1;
+        $service_id = self::set_service_id();
         $connection = stream_socket_accept($socket);
         stream_set_blocking($connection, 0);
-        $buffer = event_buffer_new($connection, 'serviceListener::eventRead', null, 'serviceListener::eventError', self::$serviceId);
+        $buffer = event_buffer_new($connection, 'serviceListener::eventRead', null, 'serviceListener::eventError', $service_id);
         event_buffer_base_set($buffer, $base);
-        event_buffer_timeout_set($buffer, 30, 30);
+        event_buffer_timeout_set($buffer, 60, 60);
         event_buffer_watermark_set($buffer, EV_READ, 0, 0xffffff);
-        event_buffer_priority_set($buffer, 10);
+        event_buffer_priority_set($buffer, 60);
         event_buffer_enable($buffer, EV_READ | EV_PERSIST );
-        $GLOBALS['connections'][self::$serviceId] = $connection;
-        $GLOBALS['buffers'][self::$serviceId] = $buffer;
-        self::$serviceController->logger->log("Connection :". self::$serviceId.
-        						": Concurrent :". count($GLOBALS['connections']).
-        						": Local      :". stream_socket_get_name($connection, false).
-        						": Remote     :". stream_socket_get_name($connection, true), SERVICE_CONTROLLER_ACCEPT, 'serviceController');
+        $GLOBALS['connections'][$service_id] = $connection;
+        $GLOBALS['buffers'][$service_id] = $buffer;
     }
 
     public static function eventError($buffer, $error, $id)
@@ -63,7 +72,7 @@ class serviceListener
 
     public static function eventRead($buffer, $id)
     {
-        $message = event_buffer_read($buffer, 256);
+        $message = event_buffer_read($buffer, 2046);
         if(preg_match("/^exit/i", $message)) die();
         if(preg_match("/^ping/i", $message))
         {

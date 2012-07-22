@@ -40,6 +40,7 @@ class serviceMessage
 
     public static function decode($json)
     {
+        if(strlen($json) === 0) return null;
         if($object = json_decode($json))
         {
             $message = new self($object->serviceClass, $object->serviceMethod, $object->serviceData, $object->isError);
@@ -49,7 +50,7 @@ class serviceMessage
             }
             return $message;
         }
-        throw new Exception("Unable to decode service message ". $json);
+        throw new Exception("Unable to decode service message '". $json. "'");
     }
 }
 ?>

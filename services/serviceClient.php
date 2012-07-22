@@ -11,6 +11,8 @@ require_once('serviceMessage.php');
 
 class serviceClient
 {
+    const CONNECT_TIMEOUT = 60;
+
     protected $serviceHost;
     protected $serviceControllerPort;
     protected $servicePort = null;
@@ -101,7 +103,7 @@ class serviceClient
 
     private function connectServiceController()
     {
-        if (!($serviceServer = stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, 30, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
+        if (!($serviceServer = stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, self::CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT)))
         {
             throw new Exception("Unable to connect to service controller at ". $this->buildControllerConnectString());
         }
@@ -157,7 +159,7 @@ class serviceClient
 
     private function connectService()
     {
-        if(!($sfp = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, 30)))
+        if(!($sfp = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, self::CONNECT_TIMEOUT)))
         {
             throw new Exception("Unable to connect to service at ". $this->buildServiceConnectString());
         }

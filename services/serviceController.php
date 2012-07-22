@@ -7,14 +7,21 @@
  *
  */
 
-require_once('serviceListener.php');
-require_once('logger.php');
-require_once('serviceMessage.php');
+require_once 'serviceListener.php';
+require_once 'logger.php';
+require_once 'serviceMessage.php';
+require_once 'utils.php';
 
 class serviceController
 {
-    private $listeners = array();
+    // min should be greater than the service controller port.
+    // Local system resources will limit the maximum number of service instances allowed
+
+    const THREAD_PORT_MIN = 11000;
+
+    private $listener;
     private $processes = array();
+    private $workerPorts = array();
     protected $classPath;
     protected $servicePort;
     public $logger;
@@ -29,22 +36,23 @@ class serviceController
         $this->servicePort = $port;
         $this->logger = new logger(self::$logfile);
         $this->logger->log('Service listener started on port '. $port, SERVICE_LISTENER_START, 'service controller');
-        $this->listeners[] = new serviceListener($this, $port);
+        $this->listener = new serviceListener($this, $port);
     }
+
 
     public function spawnWorker($id, $message)
     {
-        $command = "/usr/local/zend/bin/php ". __DIR__. "/serviceSpawn.php";
+        $command = "/usr/local/zend/bin/php " . __DIR__ . "/serviceSpawn.php";
         $descriptorspec = array(
         0 => array("pipe", "r"),
         1 => array("pipe", "w"),
         2 => array("file", "/tmp/serviceInstance-error.log", "a")
         );
 
-        $this->processes[] = $process = proc_open($command, $descriptorspec, $pipes, null, array("SERVICE_CLASS_PATH" => $this->classPath, "SERVICE_PORT" => $this->servicePort));
+        $this->processes[$id] = $process = proc_open($command, $descriptorspec, $pipes, null, array("SERVICE_CLASS_PATH" => $this->classPath, "SERVICE_PORT" => $this->servicePort));
 
         if (is_resource($process)) {
-            fwrite($pipes[0], $message);
+            fwrite($pipes[0], $id . "|". (self::THREAD_PORT_MIN + $id) .  "|". $message);
             fclose($pipes[0]);
             $data = '';
             do
@@ -57,14 +65,10 @@ class serviceController
                 }
                 else
                 {
-                    throw new Exception("Spawn worker failed");
+                    break;
                 }
             }while ($buffer != "\n");
-
-            $constructMessage = serviceMessage::decode($data);
-
             fclose($pipes[1]);
-            $this->logger->log('Service worker spawned on service port '. $constructMessage->serviceData, SERVICE_WORKER_START, 'service controller');
         }
         // if failed return error message to client
     }
@@ -87,7 +91,7 @@ class serviceController
     {
         if (!($serviceServer = stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
         {
-            echo "$errstr ($errno)<br />\n";
+            echo "error in server stop $errstr ($errno)<br />\n";
         }
         else
         {
@@ -103,7 +107,7 @@ class serviceController
     {
         if (!($serviceServer = stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
         {
-            echo "$errstr ($errno)<br />\n";
+            echo "error in server ping $errstr ($errno)<br />\n";
         }
         else
         {

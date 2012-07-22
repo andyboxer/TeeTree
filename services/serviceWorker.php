@@ -7,22 +7,20 @@
  *
  */
 
-require_once('serviceMessage.php');
+require_once 'serviceMessage.php';
 
 class serviceWorker
 {
-    // Gap between min and max should be at least twice the maximum no. of concurrent service instances required
-    // Local system resources will limit the maximum number of service instances allowed
-
-    const THREAD_PORT_MIN = 10000;
-    const THREAD_PORT_MAX = 50000;
+    const ACCEPT_TIMEOUT = 60;
 
     protected $logFile = "/tmp/serviceTest.txt";
     protected $serviceServer = null;
+    protected $clientConnectionId = null;
     protected $clientConnection = null;
     protected $constructMessage = null;
     private $glom = "0.0.0.0";
     private $classPath = "";
+    private $servicePort = null;
     private $serviceObject = null;
     private $inPipe = null;
     private $outPipe = null;
@@ -51,27 +49,34 @@ class serviceWorker
         {
             $requestString = fread($this->inPipe, 1024);
             fclose($this->inPipe);
-            $this->constructMessage = serviceMessage::decode($requestString);
-            if($this->constructMessage->isConstructor) return;
-            throw new Exception("Request on contructor channel is not a constructor. ". $this->constructMessage->getEcoded());
+            if(preg_match("/^(\d+)\|(\d+)\|(.*)$/", $requestString, $matches))
+            {
+                $this->servicePort = intval($matches[2]);
+                $this->clientConnectionId = intval($matches[1]);
+                $this->constructMessage = serviceMessage::decode($matches[3]);
+                if($this->constructMessage->isConstructor) return;
+            }
+            throw new Exception("Request on contructor channel is not a constructor. request '". $requestString. "'");
         }
-        throw new Exception("Request channel not open. ". $this->constructMessage->getEcoded());
+        throw new Exception("Request channel not open. Request '". $requestString. "'");
     }
 
     private function openServiceChannel()
     {
-        $port = rand(self::THREAD_PORT_MIN, self::THREAD_PORT_MAX);
         try
         {
-            while(!($this->serviceServer = stream_socket_server ('tcp://'. $this->glom. ':'.$port, $errno, $errstr)))
+            if($this->serviceServer = stream_socket_server ('tcp://'. $this->glom. ':'.$this->servicePort, $errno, $errstr))
             {
-                $port = rand(self::THREAD_PORT_MIN, self::THREAD_PORT_MAX);
+                stream_set_blocking($this->serviceServer, 0);
+                $portMessage = new serviceMessage($this->constructMessage->serviceClass, 'construct', $this->servicePort);
+                if(!fwrite($this->outPipe, $portMessage->getEncoded()))
+                {
+                    throw new Exception("Unable to send constructor response on port ". $this->servicePort);
+                }
             }
-            stream_set_blocking($this->serviceServer, 0);
-            $portMessage = new serviceMessage($this->constructMessage->serviceClass, 'construct', $port);
-            if(!fwrite($this->outPipe, $portMessage->getEncoded()))
+            else
             {
-                throw new Exception("Unable to send constructor response");
+                throw new Exception("failed to open service channel on port ". $this->servicePort);
             }
         }
         catch (Exception $ex)
@@ -79,7 +84,7 @@ class serviceWorker
             $message = new serviceMessage($this->constructMessage->serviceClass, 'construct', $ex->getMessage(), true );
             if(!fwrite($this->outPipe, $message->getEncoded()))
             {
-                throw new Exception("Unable to send constructor response");
+                throw new Exception("Error opening service channel '". $ex->getMessage(). "'");
             }
         }
     }
@@ -113,7 +118,7 @@ class serviceWorker
 
     private function callHandler()
     {// to do add security check class name and use secObj
-        if($this->clientConnection = stream_socket_accept($this->serviceServer))
+        if($this->clientConnection = stream_socket_accept($this->serviceServer, self::ACCEPT_TIMEOUT))
         {
             while(!feof($this->clientConnection))
             {
