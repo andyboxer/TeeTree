@@ -279,6 +279,13 @@ class utils
         return null;
     }
 
+    public static function port_in_use($port)
+    {
+        $cmd = "netstat -nl -A inet | awk 'BEGIN {FS=\"[ :]+\"}{print $5}' | grep ". $port;
+        $result = shell_exec($cmd);
+        return strlen($result) > 0;
+    }
+
     public static function get_date($date_string)
     {
         $date = date_create_from_format('Y-m-d', substr($date_string, 0, 10));
