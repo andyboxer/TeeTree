@@ -10,7 +10,6 @@
 set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../client"). PATH_SEPARATOR. realpath(__DIR__. "/../shared"). PATH_SEPARATOR. realpath(__DIR__. "/../server"));
 require_once 'TeeTreeController.php';
 require_once 'TeeTreeClient.php';
-require_once 'TeeTreeUtils.php';
 
 // set a port for the service connection
 $testPort = 10700;

@@ -44,9 +44,16 @@ class TeeTreeListener
         {
             $service_id = self::$serviceId++;
             $port = TeeTreeController::THREAD_PORT_MIN + $service_id;
-            $in_use = TeeTreeUtils::port_in_use($port);
+            $in_use = self::port_in_use($port);
         }while($in_use);
         return $service_id;
+    }
+
+    private static function port_in_use($port)
+    {
+        $cmd = "netstat -nl -A inet | awk 'BEGIN {FS=\"[ :]+\"}{print $5}' | grep ". $port;
+        $result = shell_exec($cmd);
+        return strlen($result) > 0;
     }
 
 

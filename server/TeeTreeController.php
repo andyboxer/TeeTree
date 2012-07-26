@@ -10,11 +10,10 @@
 require_once 'TeeTreeListener.php';
 require_once 'TeeTreeLogger.php';
 require_once 'TeeTreeServiceMessage.php';
-require_once 'TeeTreeUtils.php';
 
 class TeeTreeController
 {
-    // min should be greater than the service controller port.
+    // THREAD_PORT_MIN should be greater than the service controller port.
     // Local system resources will limit the maximum number of service instances allowed
 
     const THREAD_PORT_MIN = 11000;
