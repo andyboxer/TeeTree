@@ -7,7 +7,7 @@
  *
  */
 
-set_include_path(get_include_path(). PATH_SEPARATOR. __DIR__ . PATH_SEPARATOR. realpath(__DIR__. "/../library"));
+set_include_path(get_include_path(). PATH_SEPARATOR. __DIR__ . PATH_SEPARATOR. realpath(__DIR__. "/../shared"));
 require_once 'TeeTreeLogger.php';
 require_once 'TeeTreeController.php';
 

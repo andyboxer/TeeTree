@@ -7,9 +7,9 @@
  *
  */
 
-set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../services"). PATH_SEPARATOR. realpath(__DIR__. "/../library"));
+set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../client"). PATH_SEPARATOR. realpath(__DIR__. "/../shared"). PATH_SEPARATOR. realpath(__DIR__. "/../server"));
 require_once 'TeeTreeController.php';
-require_once 'serviceClient.php';
+require_once 'TeeTreeClient.php';
 require_once 'TeeTreeUtils.php';
 
 // set a port for the service connection
@@ -22,12 +22,12 @@ if(TeeTreeController::pingServer("localhost", $testPort))
 
     try
     {
-        // define serviceClients for each service class we wish to use
+        // define TeeTreeClients for each service class we wish to use
         // note here we define both host and port for the object proxy to contact the service broker
-        class testServiceRepeater extends serviceClient{protected $serviceHost = 'localhost'; protected $TeeTreeControllerPort = 10700;}
+        class testServiceRepeater extends TeeTreeClient{protected $serviceHost = 'localhost'; protected $serviceControllerPort = 10700;}
 
         // define service client using parameterised host and port
-        class testServiceHello extends serviceClient{}
+        class testServiceHello extends TeeTreeClient{}
 
         // create an instance of the service class
         $service = new testServiceRepeater(array("construct"=>"params"));

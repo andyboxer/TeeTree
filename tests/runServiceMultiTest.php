@@ -6,9 +6,7 @@
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
-set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../services"). PATH_SEPARATOR. realpath(__DIR__. "/../library"));
-require_once 'TeeTreeController.php';
-require_once 'multi_command.php';
+require_once __DIR__. '/multi_command.php';
 
 // set a port for the service connection
 $testPort = 10700;

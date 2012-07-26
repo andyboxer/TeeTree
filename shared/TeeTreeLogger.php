@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__. "/TeeTreeLogMessageCodes.php";
+require_once __DIR__. "/TeeTreeMessageCodes.php";
 require_once __DIR__. "/TeeTreeLogMessage.php";
 
 class TeeTreeLogger

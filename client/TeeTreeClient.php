@@ -1,6 +1,6 @@
 <?php
 /**
- * @package objectServices
+ * @package TeeTree
  * @author Andrew Boxer
  * @copyright Andrew Boxer 2012
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
@@ -57,7 +57,7 @@ class TeeTreeClient
 
     public function __call($name, $args)
     {
-        $request = new serviceMessage(get_called_class(), $name, $args);
+        $request = new TeeTreeServiceMessage(get_called_class(), $name, $args);
         if(preg_match("/^_(.*)$/", $name, $matches))
         {
             $this->say($this->serviceConnection, $request);
@@ -68,7 +68,7 @@ class TeeTreeClient
 
     public function callNoWait($method, $args = null)
     {
-        $request = new serviceMessage(get_called_class(), $method, $args);
+        $request = new TeeTreeServiceMessage(get_called_class(), $method, $args);
         $this->say($this->serviceConnection, $request);
     }
 
@@ -109,7 +109,7 @@ class TeeTreeClient
         }
         else
         {
-            $request = new serviceMessage(get_called_class(), 'construct', $this->data);
+            $request = new TeeTreeServiceMessage(get_called_class(), 'construct', $this->data);
             $response = $this->converse($serviceServer, $request);
             fclose($serviceServer);
             $this->servicePort = $response->getConstructPortNumber();
@@ -137,12 +137,12 @@ class TeeTreeClient
             }
             catch(Exception $ex)
             {
-                return new serviceMessage(get_called_class(),($request !== null) ? $request->serviceMethod : 'unknown' , $ex->getMessage(), true);
+                return new TeeTreeServiceMessage(get_called_class(),($request !== null) ? $request->serviceMethod : 'unknown' , $ex->getMessage(), true);
             }
             if(strlen($response) === 0 && $buffer === "\n") $buffer = '';
             $response .= $buffer;
         } while ($buffer !== "\n" && !feof($service));
-        return serviceMessage::decode($response);
+        return TeeTreeServiceMessage::decode($response);
     }
 
     private function say($service, $request)
