@@ -7,9 +7,9 @@
  *
  */
 
-require_once('serviceMessage.php');
+require_once('TeeTreeServiceMessage.php');
 
-class serviceClient
+class TeeTreeClient
 {
     const CONNECT_TIMEOUT = 60;
 

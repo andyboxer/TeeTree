@@ -1,10 +1,10 @@
 <?php
-require_once __DIR__. "/logMessageCodes.php";
-require_once __DIR__. "/logMessage.php";
+require_once __DIR__. "/TeeTreeLogMessageCodes.php";
+require_once __DIR__. "/TeeTreeLogMessage.php";
 
-class logger
+class TeeTreeLogger
 {
-    private $logFile = '/tmp/logger.log';
+    private $logFile = '/tmp/TeeTreeLogger.log';
 
     public function __construct($logFile)
     {
@@ -13,11 +13,11 @@ class logger
 
     public function log($message, $code = '0', $source = 'unknown', $filename = null)
     {
-        $msg = new logMessage($message, $code, $source);
+        $msg = new TeeTreeLogMessage($message, $code, $source);
         $this->logMsg($msg, $filename);
     }
 
-    public function logMsg(logMessage $msg, $filename = null)
+    public function logMsg(TeeTreeLogMessage $msg, $filename = null)
     {
         if($filename === null) $filename = $this->logFile;
         if((strlen($filename) > 0))

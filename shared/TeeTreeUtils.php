@@ -7,7 +7,7 @@
  *
  */
 
-class utils
+class TeeTreeUtils
 {
     public static $conf = null;
     public static $pdo = null;

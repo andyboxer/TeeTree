@@ -1,6 +1,6 @@
 <?php
 
-class logMessage
+class TeeTreeLogMessage
 {
     private $log_date;
     private $code;

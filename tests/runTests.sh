@@ -4,7 +4,7 @@
 base_path=/home/webapps/TeeTree
 php=/usr/local/zend/bin/php
 
-$php $base_path/services/serviceLauncher.php 10700 $base_path/tests start &
+$php $base_path/server/TeeTreeLauncher.php 10700 $base_path/tests start &
 
 ## wait a moment to let the server spin up
 sleep 2
@@ -14,5 +14,5 @@ sleep 2
 
 $php $base_path/tests/runServiceMultiTest.php
 
-$php $base_path/services/serviceLauncher.php 10700 $base_path/tests stop
+$php $base_path/server/TeeTreeLauncher.php 10700 $base_path/tests stop
 

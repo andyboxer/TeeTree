@@ -1,13 +1,13 @@
 <?php
 /**
- * @package objectServices
+ * @package TeeTree
  * @author Andrew Boxer
  * @copyright Andrew Boxer 2012
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
 set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../services"). PATH_SEPARATOR. realpath(__DIR__. "/../library"));
-require_once 'serviceController.php';
+require_once 'TeeTreeController.php';
 require_once 'multi_command.php';
 
 // set a port for the service connection

@@ -1,18 +1,18 @@
 <?php
 /**
- * @package objectServices
+ * @package TeeTree
  * @author Andrew Boxer
  * @copyright Andrew Boxer 2012
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
 
-require_once 'serviceListener.php';
-require_once 'logger.php';
-require_once 'serviceMessage.php';
-require_once 'utils.php';
+require_once 'TeeTreeListener.php';
+require_once 'TeeTreeLogger.php';
+require_once 'TeeTreeServiceMessage.php';
+require_once 'TeeTreeUtils.php';
 
-class serviceController
+class TeeTreeController
 {
     // min should be greater than the service controller port.
     // Local system resources will limit the maximum number of service instances allowed
@@ -24,9 +24,9 @@ class serviceController
     private $workerPorts = array();
     protected $classPath;
     protected $servicePort;
-    public $logger;
-    private static $serviceController = null;
-    private static $logfile = "/tmp/serviceController.log";
+    public $TeeTreeLogger;
+    private static $TeeTreeController = null;
+    private static $logfile = "/tmp/TeeTreeController.log";
 
     public function __construct($classPath, $port)
     {
@@ -34,15 +34,15 @@ class serviceController
         if(!isset($GLOBALS['buffers'])) $GLOBALS['buffers'] = array();
         $this->classPath = $classPath;
         $this->servicePort = $port;
-        $this->logger = new logger(self::$logfile);
-        $this->logger->log('Service listener started on port '. $port, SERVICE_LISTENER_START, 'service controller');
-        $this->listener = new serviceListener($this, $port);
+        $this->TeeTreeLogger = new TeeTreeLogger(self::$logfile);
+        $this->TeeTreeLogger->log('Service listener started on port '. $port, SERVICE_LISTENER_START, 'service controller');
+        $this->listener = new TeeTreeListener($this, $port);
     }
 
 
     public function spawnWorker($id, $message)
     {
-        $command = "/usr/local/zend/bin/php " . __DIR__ . "/serviceSpawn.php";
+        $command = "/usr/local/zend/bin/php " . __DIR__ . "/TeeTreeServiceSpawn.php";
         $descriptorspec = array(
         0 => array("pipe", "r"),
         1 => array("pipe", "w"),
@@ -75,16 +75,16 @@ class serviceController
 
     public static function startServer($classPath = __DIR__, $port = 2000)
     {
-        $command = "/usr/local/zend/bin/php ". __DIR__. "/serviceLauncher.php";
+        $command = "/usr/local/zend/bin/php ". __DIR__. "/TeeTreeLauncher.php";
         $descriptorspec = array(
         0 => array("pipe", 'r'),
-        1 => array("file",  "/tmp/serviceLauncher.log", "a"),
+        1 => array("file",  "/tmp/TeeTreeLauncher.log", "a"),
         2 => array("file", "/tmp/serviceInstance-error.log", "a")
         );
 
-        self::$serviceController = $process = proc_open($command, $descriptorspec, $pipes, null, array("SERVICE_CLASS_PATH" => $classPath, "SERVICE_PORT" => $port));
-        $logger = new logger(self::$logfile);
-        $logger->log('Service controller started on port '. $port, SERVICE_CONTROLLER_START, 'service controller');
+        self::$TeeTreeController = $process = proc_open($command, $descriptorspec, $pipes, null, array("SERVICE_CLASS_PATH" => $classPath, "SERVICE_PORT" => $port));
+        $TeeTreeLogger = new TeeTreeLogger(self::$logfile);
+        $TeeTreeLogger->log('Service controller started on port '. $port, SERVICE_CONTROLLER_START, 'service controller');
     }
 
     public static function stopServer($host, $port)
@@ -98,8 +98,8 @@ class serviceController
             fwrite($serviceServer, "exit\n");
             fflush($serviceServer);
             fclose($serviceServer);
-            $logger = new logger(self::$logfile);
-            $logger->log('Service controller stopped on port '. $port, SERVICE_CONTROLLER_STOP, 'service controller');
+            $TeeTreeLogger = new TeeTreeLogger(self::$logfile);
+            $TeeTreeLogger->log('Service controller stopped on port '. $port, SERVICE_CONTROLLER_STOP, 'service controller');
         }
     }
 

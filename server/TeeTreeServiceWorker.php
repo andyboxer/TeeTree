@@ -1,15 +1,15 @@
 <?php
 /**
- * @package objectServices
+ * @package TeeTree
  * @author Andrew Boxer
  * @copyright Andrew Boxer 2012
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
 
-require_once 'serviceMessage.php';
+require_once 'TeeTreeServiceMessage.php';
 
-class serviceWorker
+class TeeTreeServiceWorker
 {
     const ACCEPT_TIMEOUT = 60;
 
@@ -53,7 +53,7 @@ class serviceWorker
             {
                 $this->servicePort = intval($matches[2]);
                 $this->clientConnectionId = intval($matches[1]);
-                $this->constructMessage = serviceMessage::decode($matches[3]);
+                $this->constructMessage = TeeTreeServiceMessage::decode($matches[3]);
                 if($this->constructMessage->isConstructor) return;
             }
             throw new Exception("Request on contructor channel is not a constructor. request '". $requestString. "'");
@@ -68,7 +68,7 @@ class serviceWorker
             if($this->serviceServer = stream_socket_server ('tcp://'. $this->glom. ':'.$this->servicePort, $errno, $errstr))
             {
                 stream_set_blocking($this->serviceServer, 0);
-                $portMessage = new serviceMessage($this->constructMessage->serviceClass, 'construct', $this->servicePort);
+                $portMessage = new TeeTreeServiceMessage($this->constructMessage->serviceClass, 'construct', $this->servicePort);
                 if(!fwrite($this->outPipe, $portMessage->getEncoded()))
                 {
                     throw new Exception("Unable to send constructor response on port ". $this->servicePort);
@@ -81,7 +81,7 @@ class serviceWorker
         }
         catch (Exception $ex)
         {
-            $message = new serviceMessage($this->constructMessage->serviceClass, 'construct', $ex->getMessage(), true );
+            $message = new TeeTreeServiceMessage($this->constructMessage->serviceClass, 'construct', $ex->getMessage(), true );
             if(!fwrite($this->outPipe, $message->getEncoded()))
             {
                 throw new Exception("Error opening service channel '". $ex->getMessage(). "'");
@@ -107,7 +107,7 @@ class serviceWorker
         }
         if(!$this->serviceObject)
         {
-            $response = new serviceMessage($className, 'contructor', 'Class '. $className. " not found in file ". $filename, true);
+            $response = new TeeTreeServiceMessage($className, 'contructor', 'Class '. $className. " not found in file ". $filename, true);
             fwrite($this->outPipe, $response->getEncoded());
             fflush($this->outPipe);
             $die = true;
@@ -131,23 +131,23 @@ class serviceWorker
 
                 if(strlen($data) > 0)
                 {
-                    $request = serviceMessage::decode($data);
+                    $request = TeeTreeServiceMessage::decode($data);
                     if(method_exists($this->serviceObject, $request->serviceMethod))
                     {
                         $method = $request->serviceMethod;
                         try
                         {
                             $returnVal = $this->serviceObject->$method($request->serviceData);
-                            $response = new serviceMessage($request->serviceClass, $request->serviceMethod, $returnVal);
+                            $response = new TeeTreeServiceMessage($request->serviceClass, $request->serviceMethod, $returnVal);
                         }
                         catch(Exception $ex)
                         {
-                            $response = new serviceMessage($request->serviceClass, $request->serviceMethod, $ex->getMessage(), true);
+                            $response = new TeeTreeServiceMessage($request->serviceClass, $request->serviceMethod, $ex->getMessage(), true);
                         }
                     }
                     else
                     {
-                        $response = new serviceMessage($request->serviceClass, $request->serviceMethod, "Service method {$request->serviceClass}::{$request->serviceMethod} does not exist", true);
+                        $response = new TeeTreeServiceMessage($request->serviceClass, $request->serviceMethod, "Service method {$request->serviceClass}::{$request->serviceMethod} does not exist", true);
                         $request->serviceMethod = "";
                     }
 

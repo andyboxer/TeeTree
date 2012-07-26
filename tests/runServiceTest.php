@@ -1,6 +1,6 @@
 <?php
 /**
- * @package objectServices
+ * @package TeeTree
  * @author Andrew Boxer
  * @copyright Andrew Boxer 2012
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
@@ -8,15 +8,15 @@
  */
 
 set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../services"). PATH_SEPARATOR. realpath(__DIR__. "/../library"));
-require_once 'serviceController.php';
+require_once 'TeeTreeController.php';
 require_once 'serviceClient.php';
-require_once 'utils.php';
+require_once 'TeeTreeUtils.php';
 
 // set a port for the service connection
 $testPort = 10700;
 
 // test for server heartbeat
-if(serviceController::pingServer("localhost", $testPort))
+if(TeeTreeController::pingServer("localhost", $testPort))
 {
     echo " --- server heartbeat received\n";
 
@@ -24,7 +24,7 @@ if(serviceController::pingServer("localhost", $testPort))
     {
         // define serviceClients for each service class we wish to use
         // note here we define both host and port for the object proxy to contact the service broker
-        class testServiceRepeater extends serviceClient{protected $serviceHost = 'localhost'; protected $serviceControllerPort = 10700;}
+        class testServiceRepeater extends serviceClient{protected $serviceHost = 'localhost'; protected $TeeTreeControllerPort = 10700;}
 
         // define service client using parameterised host and port
         class testServiceHello extends serviceClient{}
