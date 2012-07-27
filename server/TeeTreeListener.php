@@ -92,7 +92,7 @@ class TeeTreeListener
         }
         catch(Exception $ex)
         {
-            $errorMessage = new TeeTreeServiceMessage('Listener', 'error', $message. "|". $ex->getMessage(), true);
+            $errorMessage = new TeeTreeServiceMessage('Listener', null, $message. "|". $ex->getMessage(), TeeTreeServiceMessage::TEETREE_ERROR);
             if(isset($GLOBALS['connections'][$id]))
             fwrite($GLOBALS['connections'][$id], $errorMessage->getEncoded());
         }

@@ -57,25 +57,19 @@ class TeeTreeClient
 
     public function finishTee()
     {
-        $request = new TeeTreeServiceMessage(get_called_class(), "finishTee");
+        $request = new TeeTreeServiceMessage(get_called_class(), null, null, TeeTreeServiceMessage::TEETREE_FINAL);
         if($this->serviceConnection) $this->say($this->serviceConnection, $request);
     }
 
     public function __call($name, $args)
     {
         $request = new TeeTreeServiceMessage(get_called_class(), $name, $args);
-        if(preg_match("/^_(.+)$/", $name))
+        if($request->serviceMessageType === TeeTreeServiceMessage::TEETREE_NOWAIT_NORETURN || $request->serviceMessageType === TeeTreeServiceMessage::TEETREE_NOWAIT)
         {
             $this->say($this->serviceConnection, $request);
             return;
         }
         return $this->converse($this->serviceConnection, $request)->serviceData;
-    }
-
-    public function callNoWait($method, $args = null)
-    {
-        $request = new TeeTreeServiceMessage(get_called_class(), $method, $args);
-        $this->say($this->serviceConnection, $request);
     }
 
     public function getLastResponse()
@@ -115,47 +109,55 @@ class TeeTreeClient
         }
         else
         {
-            $request = new TeeTreeServiceMessage(get_called_class(), 'construct', $this->data);
+            $request = new TeeTreeServiceMessage(get_called_class(), null, $this->data, TeeTreeServiceMessage::TEETREE_CONSTRUCTOR);
             $response = $this->converse($serviceServer, $request);
             fclose($serviceServer);
-            $this->servicePort = $response->getConstructPortNumber();
+            if($response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE)
+            {
+                $this->servicePort = $response->serviceData;
+            }
+            else
+            {
+                throw new Exception("Service port message not recieved as response from constructor");
+            }
         }
     }
 
-    private function converse($service, $request)
+    private function converse($serviceConnection, $request)
     {
-        if(!$service || !is_resource($service))
+        if(!$serviceConnection || !is_resource($serviceConnection))
         {
             throw new Exception("No service connection found to converse with");
         }
-        $this->say($service, $request);
-        return $this->listen($service);
+        $this->say($serviceConnection, $request);
+        return $this->listen($serviceConnection);
     }
 
-    private function listen($service, $request = null)
+    private function listen($serviceConnection, $request = null)
     {
         $response = '';
         do
         {
             try
             {
-                $buffer =  fgets($service, 2);
+                $buffer =  fgets($serviceConnection, 2);
             }
             catch(Exception $ex)
             {
-                return new TeeTreeServiceMessage(get_called_class(),($request !== null) ? $request->serviceMethod : 'unknown' , $ex->getMessage(), true);
+                $methodName = ($request !== null) ? $request->serviceMethod : 'unknown';
+                return new TeeTreeServiceMessage(get_called_class(), $methodName , $ex->getMessage(), TeeTreeServiceMessage::TEETREE_ERROR);
             }
             if(strlen($response) === 0 && $buffer === "\n") $buffer = '';
             $response .= $buffer;
-        } while ($buffer !== "\n" && !feof($service));
+        } while ($buffer !== "\n" && !feof($serviceConnection));
         return TeeTreeServiceMessage::decode($response);
     }
 
-    private function say($service, $request)
+    private function say($serviceConnection, $request)
     {
         try
         {
-            if($service) fwrite($service, $request->getEncoded());
+            if($serviceConnection) fwrite($serviceConnection, $request->getEncoded());
         }
         catch(Exception $ex)
         {
@@ -165,13 +167,13 @@ class TeeTreeClient
 
     private function connectService()
     {
-        if(!($sfp = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, self::CONNECT_TIMEOUT)))
+        if(!($serviceConnection = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, self::CONNECT_TIMEOUT)))
         {
             throw new Exception("Unable to connect to service at ". $this->buildServiceConnectString());
         }
         else
         {
-            $this->serviceConnection = $sfp;
+            $this->serviceConnection = $serviceConnection;
         }
     }
 }

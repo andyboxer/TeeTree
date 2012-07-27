@@ -13,32 +13,47 @@ class TeeTreeServiceMessage
     const TEETREE_NOWAIT_NORETURN = "TEETREE_NOWAIT_NORETURN";
     const TEETREE_FINAL = "TEETREE_FINAL";
     const TEETREE_TERMINATE = "TEETREE_TERMINATE";
+    const TEETREE_CONSTRUCTOR = "TEETREE_CONSTRUCTOR";
+    const TEETREE_ERROR = "TEETREE_ERROR";
+    const TEETREE_PORT_MESSAGE = "TEETREE_PORT_MESSAGE";
+    const TEETREE_EMPTY = "TEETREE_EMPTY";
 
     public $serviceClass = null;
     public $serviceMethod = null;
     public $serviceData = null;
-    public $isConstructor = false;
-    public $isError = false;
-    private $isLast = false;
-    private $doResponse = true;
+    public $serviceMessageType = self::TEETREE_EMPTY;
 
-    public function __construct($class, $method, $data = null, $isError = false, $close = false)
+    public function __construct($class, $method, $data = null, $messageType = self::TEETREE_EMPTY)
     {
         $this->serviceClass = $class;
         $this->serviceMethod = $method;
         $this->serviceData = $data;
-        $this->isConstructor = ($method === 'construct');
-        $this->isError = $isError;
-        $this->isLast = $close;
+        $this->setMessageType($data, $messageType);
+        if($this->serviceMessageType === self::TEETREE_PORT_MESSAGE) $this->parsePortMessage($data);
     }
 
-    public function getConstructPortNumber()
+    private function setMessageType($data, $messageType)
     {
-        if($this->isConstructor && preg_match("/^(\d+)$/", $this->serviceData, $matches))
+        if($messageType === self::TEETREE_EMPTY && is_array($data))
         {
-            return $matches[1];
+            $lastElement = end($data);
+            if(is_string($lastElement) && preg_match("/^TEETREE_[A-Z]+$/", $lastElement))
+            {
+                $this->serviceMessageType = array_pop($data);
+            }
         }
-        throw new Exception("Constructor called on non construction response");
+        else
+        {
+            $this->serviceMessageType = $messageType;
+        }
+    }
+
+    private function parsePortMessage($data)
+    {
+        if(is_string($data) && preg_match("/^(\d+)$/", $data, $matches))
+        {
+            $this->serviceData = $matches[1];
+        }
     }
 
     public function getEncoded()
@@ -51,8 +66,8 @@ class TeeTreeServiceMessage
         if(strlen($json) === 0) return null;
         if($object = json_decode($json))
         {
-            $message = new self($object->serviceClass, $object->serviceMethod, $object->serviceData, $object->isError);
-            if($message->isError)
+            $message = new self($object->serviceClass, $object->serviceMethod, $object->serviceData, $object->serviceMessageType);
+            if($message->serviceMessageType === self::TEETREE_ERROR)
             {
                 throw new Exception($message->serviceData);
             }
