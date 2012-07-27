@@ -9,19 +9,27 @@
 
 class TeeTreeServiceMessage
 {
+    const TEETREE_NOWAIT = "TEETREE_NOWAIT";
+    const TEETREE_NOWAIT_NORETURN = "TEETREE_NOWAIT_NORETURN";
+    const TEETREE_FINAL = "TEETREE_FINAL";
+    const TEETREE_TERMINATE = "TEETREE_TERMINATE";
+
     public $serviceClass = null;
     public $serviceMethod = null;
     public $serviceData = null;
     public $isConstructor = false;
     public $isError = false;
+    private $isLast = false;
+    private $doResponse = true;
 
-    public function __construct($class, $method, $data, $isError = false)
+    public function __construct($class, $method, $data = null, $isError = false, $close = false)
     {
         $this->serviceClass = $class;
         $this->serviceMethod = $method;
         $this->serviceData = $data;
         $this->isConstructor = ($method === 'construct');
         $this->isError = $isError;
+        $this->isLast = $close;
     }
 
     public function getConstructPortNumber()

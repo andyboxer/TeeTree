@@ -9,9 +9,9 @@
 
 require_once 'TeeTreeServiceMessage.php';
 
-class TeeTreeServiceWorker
+class TeeTreeTee
 {
-    const ACCEPT_TIMEOUT = 60;
+    const ACCEPT_TIMEOUT = 10;
 
     protected $logFile = "/tmp/serviceTest.txt";
     protected $serviceServer = null;
@@ -24,10 +24,12 @@ class TeeTreeServiceWorker
     private $serviceObject = null;
     private $inPipe = null;
     private $outPipe = null;
+    private $logger;
 
     public function __construct($glom = "0.0.0.0")
     {
-        $this->classPath = getenv("SERVICE_CLASS_PATH");
+        $this->logger = new TeeTreeLogger("/tmp/TeeTreecallHandler.log");
+        $this->classPath = getenv("TEETREE_CLASS_PATH");
         $this->glom = $glom;
         $this->inPipe = fopen('php://stdin','r');
         $this->outPipe = fopen('php://stdout','w');
@@ -117,54 +119,75 @@ class TeeTreeServiceWorker
     }
 
     private function callHandler()
-    {// to do add security check class name and use secObj
-        if($this->clientConnection = stream_socket_accept($this->serviceServer, self::ACCEPT_TIMEOUT))
+    {
+        //TODO: add security check class name and use secObj
+
+        $isLast = false;
+        do
         {
-            while(!feof($this->clientConnection))
+            if($this->clientConnection = stream_socket_accept($this->serviceServer, self::ACCEPT_TIMEOUT))
             {
-                $buffer = '';
-                $data = '';
-                while ($buffer !== "\n" && !feof($this->clientConnection)) {
-                    $buffer =  fgets($this->clientConnection, 2);
-                    $data .= $buffer;
-                }
-
-                if(strlen($data) > 0)
+                while(!feof($this->clientConnection))
                 {
-                    $request = TeeTreeServiceMessage::decode($data);
-                    if(method_exists($this->serviceObject, $request->serviceMethod))
+                    $this->logger->log("in read loop");
+                    $message = $this->readMessage();
+                    if(strlen($message) > 0)
                     {
-                        $method = $request->serviceMethod;
-                        try
+                        $this->logger->log(print_r($message, true));
+                        $request = TeeTreeServiceMessage::decode($message);
+                        $response = $this->executeRequest($request);
+                        if(!($isLast = $response->isLast))
                         {
-                            $returnVal = $this->serviceObject->$method($request->serviceData);
-                            $response = new TeeTreeServiceMessage($request->serviceClass, $request->serviceMethod, $returnVal);
-                        }
-                        catch(Exception $ex)
-                        {
-                            $response = new TeeTreeServiceMessage($request->serviceClass, $request->serviceMethod, $ex->getMessage(), true);
-                        }
-                    }
-                    else
-                    {
-                        $response = new TeeTreeServiceMessage($request->serviceClass, $request->serviceMethod, "Service method {$request->serviceClass}::{$request->serviceMethod} does not exist", true);
-                        $request->serviceMethod = "";
-                    }
-
-                    if(preg_match("/^_(.*)$/", $request->serviceMethod) === 0)
-                    {
-                        if(!fwrite($this->clientConnection, $response->getEncoded(). "\n"))
-                        {
-                            break;
+                            $this->logger->log("send response :". $response->getEncoded());
+                            if(!fwrite($this->clientConnection, $response->getEncoded()))
+                            {
+                                throw new Exception("Unable send response for message :". $response->getEncoded());
+                            }
                         }
                     }
                 }
             }
+            else
+            {
+                throw new Exception("Service worker connection timed out");
+            }
+        }while(!$isLast);
+    }
+    private function readMessage()
+    {
+        $buffer = '';
+        $message = '';
+        while ($buffer !== "\n" && !feof($this->clientConnection)) {
+            $buffer = fgets($this->clientConnection, 2);
+            $message .= $buffer;
+        }
+        return $message;
+    }
+
+    private function executeRequest($request)
+    {
+        $method = $request->serviceMethod;
+        if($method === 'finishTee')
+        {
+            return new TeeTreeServiceMessage($request->serviceClass, $method, '', false, true);
+        }
+        elseif(method_exists($this->serviceObject, $method))
+        {
+            try
+            {
+                $returnVal = $this->serviceObject->$method($request->serviceData);
+                return new TeeTreeServiceMessage($request->serviceClass, $method, $returnVal, false, (preg_match("/^_(.*)$/", $method) === 1));
+            }
+            catch(Exception $ex)
+            {
+                return new TeeTreeServiceMessage($request->serviceClass, $method, $ex->getMessage());
+            }
         }
         else
         {
-            throw new Exception("Service worker connection timed out");
+            return new TeeTreeServiceMessage($request->serviceClass, $method, "Service method {$request->serviceClass}::{$method} does not exist", true);
         }
+        return null;
     }
 }
 ?>

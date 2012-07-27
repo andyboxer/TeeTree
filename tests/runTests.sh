@@ -8,11 +8,11 @@ $php $base_path/server/TeeTreeLauncher.php 10700 $base_path/tests start &
 
 ## wait a moment to let the server spin up
 sleep 2
-$php $base_path/tests/runServiceTest.php
+$php $base_path/tests/TeeTreeTest.php
 
-## now step it up a bit run service multi will do the same as above but with 100 threads in paralell
+## multiple simultaneous processes test
 
-##$php $base_path/tests/runServiceMultiTest.php
+##$php $base_path/tests/TeeTreeMultiTest.php
 
 $php $base_path/server/TeeTreeLauncher.php 10700 $base_path/tests stop
 

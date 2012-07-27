@@ -10,6 +10,7 @@
 class testServiceRepeater
 {
     private $args = null;
+    private $logfile = "/tmp/TeeTreeRepeater.log";
 
     public function __construct($args)
     {
@@ -18,7 +19,8 @@ class testServiceRepeater
 
     public function getStuff($data)
     {
-        return "bakatcha:". json_encode($data);
+        $retval = str_shuffle($data[0]);
+        return "bakatcha:". $retval;
     }
 
     public function _dontWait($data)
@@ -26,7 +28,7 @@ class testServiceRepeater
         for($i = 0; $i < 10; $i++)
         {
             sleep(1);
-            file_put_contents("/tmp/serviceRepeater.log", $i. "\n", FILE_APPEND);
+            file_put_contents($this->logfile, $i. "\n", FILE_APPEND);
         }
         return "nothing reaches client";
     }
@@ -36,7 +38,7 @@ class testServiceRepeater
         for($i = 0; $i < 10; $i++)
         {
             sleep(1);
-            file_put_contents("/tmp/serviceRepeater.log", (isset($this->args[0])?$this->args[0]:''). " - ". $i. ":". $data. "\n", FILE_APPEND);
+            file_put_contents($this->logfile, (isset($this->args[0])?$this->args[0]:''). " - ". $i. ":". $data. "\n", FILE_APPEND);
         }
         return (isset($this->args[0])?$this->args[0]:''). " this will get picked up later by the client ". $data;
     }

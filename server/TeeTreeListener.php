@@ -88,7 +88,7 @@ class TeeTreeListener
         }
         try
         {
-            self::$TeeTreeController->spawnWorker($id, $message);
+            self::$TeeTreeController->makeTee($id, $message);
         }
         catch(Exception $ex)
         {

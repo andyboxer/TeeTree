@@ -52,13 +52,19 @@ class TeeTreeClient
 
     public function __destruct()
     {
-        if($this->serviceConnection) fclose($this->serviceConnection);
+        $this->finishTee();
+    }
+
+    public function finishTee()
+    {
+        $request = new TeeTreeServiceMessage(get_called_class(), "finishTee");
+        if($this->serviceConnection) $this->say($this->serviceConnection, $request);
     }
 
     public function __call($name, $args)
     {
         $request = new TeeTreeServiceMessage(get_called_class(), $name, $args);
-        if(preg_match("/^_(.*)$/", $name, $matches))
+        if(preg_match("/^_(.+)$/", $name))
         {
             $this->say($this->serviceConnection, $request);
             return;
