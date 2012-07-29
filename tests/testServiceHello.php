@@ -18,7 +18,7 @@ class testServiceHello
 
     public function sayHello($data)
     {
-        $data = (object) array("test1" => "this is a test for an object return value");
+        $data = (object) array("test1" => "this is a test for an object return value\nwith a line break inside");
         return $data;
     }
 
