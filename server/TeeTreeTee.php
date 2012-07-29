@@ -121,26 +121,25 @@ class TeeTreeTee
     private function callHandler()
     {
         //TODO: add security check class name and use secObj
-
-        $isLast = false;
         do
         {
-            if($this->clientConnection = stream_socket_accept($this->serviceServer, self::ACCEPT_TIMEOUT))
+            $this->logger->log("TeeTree worker waiting");
+            if($this->clientConnection = @stream_socket_accept($this->serviceServer, self::ACCEPT_TIMEOUT))
             {
                 while(!feof($this->clientConnection))
                 {
-                    $this->logger->log("in read loop");
+                    $this->logger->log("TeeTree worker reading");
                     $message = $this->readMessage();
                     if(strlen($message) > 0)
                     {
-                        $this->logger->log(print_r($message, true));
+                        $this->logger->log("TeeTree worker message received : ". print_r($message, true));
                         $request = TeeTreeServiceMessage::decode($message);
                         $response = $this->executeRequest($request);
-                        if($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_NOWAIT_NORETURN
+                        if($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_CALL_NORETURN
                             && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_FINAL
                             && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE)
                         {
-                            $this->logger->log("send response :". $response->getEncoded());
+                            $this->logger->log("TeeTree worker sending response : ". $response->getEncoded());
                             if(!fwrite($this->clientConnection, $response->getEncoded()))
                             {
                                 throw new Exception("Unable send response for message :". $response->getEncoded());
@@ -151,9 +150,10 @@ class TeeTreeTee
             }
             else
             {
-                throw new Exception("Service worker connection timed out");
+                break;
             }
         }while($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE);
+        $this->logger->log("TeeTree worker exiting");
     }
     private function readMessage()
     {
