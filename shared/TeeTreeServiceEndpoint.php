@@ -16,11 +16,10 @@ class TeeTreeServiceEndpoint
                 {
                     return TeeTreeServiceMessage::decode($response);
                 }
-                else
+                elseif($code = socket_last_error())
                 {
-                    $code = socket_last_error();
                     $errorMessage = socket_strerror($code);
-                    throw new Exception("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " :". $errorMessage);
+                    throw new Exception("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " $code :". $errorMessage);
                 }
             }
             else
