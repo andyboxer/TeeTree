@@ -175,7 +175,7 @@ class TeeTreeTee
             try
             {
                 $returnVal = $this->serviceObject->$method($request->serviceData);
-                return new TeeTreeServiceMessage($request->serviceClass, $method, $returnVal, false, $request->serviceMessageType);
+                return new TeeTreeServiceMessage($request->serviceClass, $method, $returnVal, $request->serviceMessageType);
             }
             catch(Exception $ex)
             {
