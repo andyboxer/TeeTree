@@ -8,16 +8,10 @@
  */
 
 set_include_path(get_include_path(). PATH_SEPARATOR. __DIR__ . PATH_SEPARATOR. realpath(__DIR__. "/../shared"));
-require_once 'TeeTreeLogger.php';
 require_once 'TeeTreeController.php';
-
-$TeeTreeLogger = new TeeTreeLogger("/tmp/TeeTreeLauncher.log");
 
 if(isset($argv) && (count($argv) === 4))
 {
-    $TeeTreeLogger->log("TeeTree launcher started", SERVICE_LAUNCHER_START, 'TeeTree launcher');
-    $TeeTreeLogger->log("TeeTree Class Path  ". $argv[2], SERVICE_LAUNCHER_START, 'TeeTree launcher');
-    $TeeTreeLogger->log("TeeTree Server Port ". $argv[1], SERVICE_LAUNCHER_START, 'TeeTree launcher');
     if($argv[3] === 'start')
     {
         $controller = new TeeTreeController($argv[2], $argv[1]);
@@ -30,8 +24,8 @@ if(isset($argv) && (count($argv) === 4))
 else
 {
     echo <<<USAGE
-Usage: php TeeTreeLauncher.php <ServicePort> <ClassPath> <stop|start>
 
+Usage: php TeeTreeLauncher.php <ServicePort> <ClassPath> <stop|start>
 
 USAGE;
 
