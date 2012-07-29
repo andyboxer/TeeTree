@@ -7,11 +7,12 @@
  *
  */
 
-require_once 'TeeTreeServiceMessage.php';
+require_once 'TeeTreeServiceEndpoint.php';
 
-class TeeTreeTee
+class TeeTreeTee extends TeeTreeServiceEndpoint
 {
     const ACCEPT_TIMEOUT = 10;
+    const READWRITE_TIMEOUT = 600;
 
     protected $logFile = "/tmp/serviceTest.txt";
     protected $serviceServer = null;
@@ -49,8 +50,15 @@ class TeeTreeTee
     {
         if(is_resource($this->inPipe))
         {
-            $requestString = fread($this->inPipe, 1024);
-            fclose($this->inPipe);
+            try
+            {
+                $requestString = fread($this->inPipe, 1024);
+                fclose($this->inPipe);
+            }
+            catch(Exception $ex)
+            {
+                throw new Exception("Failed to read constructor message :". $ex->getMessage());
+            }
             if(preg_match("/^(\d+)\|(\d+)\|(.*)$/", $requestString, $matches))
             {
                 $this->servicePort = intval($matches[2]);
@@ -126,25 +134,25 @@ class TeeTreeTee
             $this->logger->log("TeeTree worker waiting");
             if($this->clientConnection = @stream_socket_accept($this->serviceServer, self::ACCEPT_TIMEOUT))
             {
+                stream_set_timeout($this->clientConnection, self::READWRITE_TIMEOUT);
                 while(!feof($this->clientConnection))
                 {
                     $this->logger->log("TeeTree worker reading");
-                    $message = $this->readMessage();
-                    if(strlen($message) > 0)
+                    if($request = $this->readMessage($this->clientConnection))
                     {
-                        $this->logger->log("TeeTree worker message received : ". print_r($message, true));
-                        $request = TeeTreeServiceMessage::decode($message);
+                        $this->logger->log("TeeTree worker message received : ". $request->getEncoded());
                         $response = $this->executeRequest($request);
                         if($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_CALL_NORETURN
-                            && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_FINAL
-                            && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE)
+                        && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_FINAL
+                        && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE)
                         {
                             $this->logger->log("TeeTree worker sending response : ". $response->getEncoded());
-                            if(!fwrite($this->clientConnection, $response->getEncoded()))
-                            {
-                                throw new Exception("Unable send response for message :". $response->getEncoded());
-                            }
+                            $this->writeMessage($this->clientConnection, $response);
                         }
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
             }
@@ -154,16 +162,6 @@ class TeeTreeTee
             }
         }while($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE);
         $this->logger->log("TeeTree worker exiting");
-    }
-    private function readMessage()
-    {
-        $buffer = '';
-        $message = '';
-        while ($buffer !== "\n" && !feof($this->clientConnection)) {
-            $buffer = fgets($this->clientConnection, 2);
-            $message .= $buffer;
-        }
-        return $message;
     }
 
     private function executeRequest($request)

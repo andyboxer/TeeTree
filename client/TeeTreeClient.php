@@ -7,13 +7,12 @@
  *
  */
 
-require_once('TeeTreeServiceMessage.php');
+require_once('TeeTreeServiceEndpoint.php');
 
-class TeeTreeClient
+class TeeTreeClient extends TeeTreeServiceEndpoint
 {
     const CONNECT_TIMEOUT = 60;
     const READWRITE_TIMEOUT = 600;
-    const MAX_MESSAGE_SIZE = 1000000;
 
     protected $serviceHost;
     protected $serviceControllerPort;
@@ -60,7 +59,7 @@ class TeeTreeClient
     public function finishTee()
     {
         $request = new TeeTreeServiceMessage(get_called_class(), null, null, TeeTreeServiceMessage::TEETREE_FINAL);
-        if($this->serviceConnection) $this->say($this->serviceConnection, $request);
+        if($this->serviceConnection) $this->writeMessage($this->serviceConnection, $request);
     }
 
     public function __call($name, $args)
@@ -68,7 +67,7 @@ class TeeTreeClient
         $request = new TeeTreeServiceMessage(get_called_class(), $name, $args);
         if($request->serviceMessageType === TeeTreeServiceMessage::TEETREE_CALL_NORETURN || $request->serviceMessageType === TeeTreeServiceMessage::TEETREE_CALL_NOWAIT)
         {
-            $this->say($this->serviceConnection, $request);
+            $this->writeMessage($this->serviceConnection, $request);
             return;
         }
         return $this->converse($this->serviceConnection, $request)->serviceData;
@@ -76,7 +75,7 @@ class TeeTreeClient
 
     public function getLastResponse()
     {
-        return $this->listen($this->serviceConnection);
+        return $this->readMessage($this->serviceConnection);
     }
 
     private function buildControllerConnectString()
@@ -125,68 +124,6 @@ class TeeTreeClient
         }
     }
 
-    private function converse($serviceConnection, $request)
-    {
-        if(!$serviceConnection || !is_resource($serviceConnection))
-        {
-            throw new Exception("No service connection found to converse with");
-        }
-        $this->say($serviceConnection, $request);
-        return $this->listen($serviceConnection);
-    }
-
-    private function listen($serviceConnection)
-    {
-        try
-        {
-            if($serviceConnection)
-            {
-                if(($response = stream_get_line($serviceConnection, self::MAX_MESSAGE_SIZE, "\n")) !== false)
-                {
-                    return TeeTreeServiceMessage::decode($response);
-                }
-                else
-                {
-                    $code = socket_last_error();
-                    $errorMessage = socket_strerror($code);
-                    throw new Exception("Error receiving service message response from service :". $errorMessage);
-                }
-            }
-            else
-            {
-                throw new Exception("Attempted to receive a message from a non-existant service connection");
-            }
-        }
-        catch(Exception $ex)
-        {
-            throw new Exception("Unable to receive message from service at ". $this->buildServiceConnectString());
-        }
-    }
-
-    private function say($serviceConnection, $request)
-    {
-        try
-        {
-            if($serviceConnection)
-            {
-                if (!stream_socket_sendto($serviceConnection, $request->getEncoded()))
-                {
-                    $code = socket_last_error();
-                    $errorMessage = socket_strerror($code);
-                    throw new Exception("Error sending service message to service {$request->serviceClass}::{$request->serviceMethod} :". $errorMessage);
-                }
-            }
-            else
-            {
-                throw new Exception("Attempted to send a message on a non-existant service connection");
-            }
-        }
-        catch(Exception $ex)
-        {
-            throw new Exception("Unable to send message to service at ". $this->buildServiceConnectString());
-        }
-    }
-
     private function connectService()
     {
         if(!($serviceConnection = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, self::CONNECT_TIMEOUT)))
@@ -198,6 +135,16 @@ class TeeTreeClient
             stream_set_timeout($serviceConnection, self::READWRITE_TIMEOUT);
             $this->serviceConnection = $serviceConnection;
         }
+    }
+
+    private function converse($serviceConnection, $request)
+    {
+        if(!$serviceConnection || !is_resource($serviceConnection))
+        {
+            throw new Exception("No service connection found to converse with");
+        }
+        $this->writeMessage($serviceConnection, $request);
+        return $this->readMessage($serviceConnection);
     }
 }
 

@@ -23,28 +23,28 @@ if(TeeTreeController::pingServer("localhost", $testPort))
     {
         // define TeeTreeClients for each service class we wish to use
         // note here we define both host and port for the object proxy to contact the service broker
-       // class testServiceRepeater extends TeeTreeClient{protected $serviceHost = 'localhost'; protected $serviceControllerPort = 10700;}
+       class testServiceRepeater extends TeeTreeClient{protected $serviceHost = 'localhost'; protected $serviceControllerPort = 10700;}
 
         // define service client using parameterised host and port
        class testServiceHello extends TeeTreeClient{}
 
         // create an instance of the service class
-   //     $service = new testServiceRepeater(array("construct"=>"params"));
+       $service = new testServiceRepeater(array("construct"=>"params"));
 
         // create an instance using paramters for host and port
         $helloo = new testServiceHello("host:localhost", "port:". $testPort, array("contructor_gets_these" => "data"));
 
         // create another instance of the same service class
- //       $service2 = new testServiceRepeater();
+        $service2 = new testServiceRepeater();
 
         // call a method which we can come back to later to get it's results
-   //     $service2->callNoWait('doLongRunning');
+       // $service2->doLongRunning();
 
         // call a method which we can come back to later to get it's results again ( this will run after the above call has completed )
     //    $service2->callNoWait('doLongRunning');
 
         // ordinary blocking call on a remote object
-   //     echo $service->getStuff("this is some different data"). "\n";
+        echo $service->getStuff("this is some different data"). "\n";
 
         // call a non-blocking fire and forget method several times, each method call will occur sequentially
      //   for($loop = 0; $loop < 5; $loop++)
@@ -53,8 +53,8 @@ if(TeeTreeController::pingServer("localhost", $testPort))
       //  }
 
         // method call returning an object
-        $response = $helloo->sayHello("arg2", "arg1", array());
-        print($response->test1. "\n");
+       // $response = $helloo->sayHello("arg2", "arg1", array());
+       // print($response->test1. "\n");
 
         // The following call will throw a service side exception which should be passed back to the client and re-thrown at the client end
 /*        try
@@ -78,8 +78,8 @@ if(TeeTreeController::pingServer("localhost", $testPort))
         }
 */
         // that done we can now go back to our long running method call from above and fetch the results
- //       $result = $service2->getLastResponse();
- //       print_r($result);
+      //  $result = $service2->getLastResponse();
+      //  print_r($result);
 
         // that done we can now go back to our long running method call from above and fetch the results again
   //      $result = $service2->getLastResponse();
