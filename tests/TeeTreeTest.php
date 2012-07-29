@@ -53,7 +53,7 @@ if(TeeTreeController::pingServer("localhost", $testPort))
       //  }
 
         // method call returning an object
-        $response = $helloo->sayHello("arg2", "arg1", array(), "NOWAIT");
+/*        $response = $helloo->sayHello("arg2", "arg1", array(), "NOWAIT");
         print($response->test1. "\n");
 
         // The following call will throw a service side exception which should be passed back to the client and re-thrown at the client end

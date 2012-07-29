@@ -64,7 +64,7 @@ class TeeTreeClient
     public function __call($name, $args)
     {
         $request = new TeeTreeServiceMessage(get_called_class(), $name, $args);
-        if($request->serviceMessageType === TeeTreeServiceMessage::TEETREE_NOWAIT_NORETURN || $request->serviceMessageType === TeeTreeServiceMessage::TEETREE_NOWAIT)
+        if($request->serviceMessageType === TeeTreeServiceMessage::TEETREE_CALL_NORETURN || $request->serviceMessageType === TeeTreeServiceMessage::TEETREE_CALL_NOWAIT)
         {
             $this->say($this->serviceConnection, $request);
             return;

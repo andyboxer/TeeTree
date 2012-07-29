@@ -9,14 +9,15 @@
 
 class TeeTreeServiceMessage
 {
-    const TEETREE_NOWAIT = "TEETREE_NOWAIT";
-    const TEETREE_NOWAIT_NORETURN = "TEETREE_NOWAIT_NORETURN";
+    const TEETREE_EMPTY = "TEETREE_EMPTY";
+    const TEETREE_CONSTRUCTOR = "TEETREE_CONSTRUCTOR";
+    const TEETREE_PORT_MESSAGE = "TEETREE_PORT_MESSAGE";
+    const TEETREE_CALL = "TEETREE_CALL";
+    const TEETREE_CALL_NOWAIT = "TEETREE_CALL_NOWAIT";
+    const TEETREE_CALL_NORETURN = "TEETREE_CALL_NORETURN";
     const TEETREE_FINAL = "TEETREE_FINAL";
     const TEETREE_TERMINATE = "TEETREE_TERMINATE";
-    const TEETREE_CONSTRUCTOR = "TEETREE_CONSTRUCTOR";
     const TEETREE_ERROR = "TEETREE_ERROR";
-    const TEETREE_PORT_MESSAGE = "TEETREE_PORT_MESSAGE";
-    const TEETREE_EMPTY = "TEETREE_EMPTY";
 
     public $serviceClass = null;
     public $serviceMethod = null;
@@ -40,6 +41,10 @@ class TeeTreeServiceMessage
             if(is_string($lastElement) && preg_match("/^TEETREE_[A-Z]+$/", $lastElement))
             {
                 $this->serviceMessageType = array_pop($data);
+            }
+            else
+            {
+                $this->serviceMessageType = self::TEETREE_CALL;
             }
         }
         else
