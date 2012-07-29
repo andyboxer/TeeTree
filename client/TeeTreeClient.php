@@ -12,6 +12,8 @@ require_once('TeeTreeServiceMessage.php');
 class TeeTreeClient
 {
     const CONNECT_TIMEOUT = 60;
+    const READWRITE_TIMEOUT = 600;
+    const MAX_MESSAGE_SIZE = 1000000;
 
     protected $serviceHost;
     protected $serviceControllerPort;
@@ -111,7 +113,7 @@ class TeeTreeClient
         {
             $request = new TeeTreeServiceMessage(get_called_class(), null, $this->data, TeeTreeServiceMessage::TEETREE_CONSTRUCTOR);
             $response = $this->converse($serviceServer, $request);
-            fclose($serviceServer);
+            stream_socket_shutdown($serviceServer, STREAM_SHUT_WR);
             if($response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE)
             {
                 $this->servicePort = $response->serviceData;
@@ -133,31 +135,51 @@ class TeeTreeClient
         return $this->listen($serviceConnection);
     }
 
-    private function listen($serviceConnection, $request = null)
+    private function listen($serviceConnection)
     {
-        $response = '';
-        do
+        try
         {
-            try
+            if($serviceConnection)
             {
-                $buffer =  fgets($serviceConnection, 2);
+                if(($response = stream_get_line($serviceConnection, self::MAX_MESSAGE_SIZE, "\n")) !== false)
+                {
+                    return TeeTreeServiceMessage::decode($response);
+                }
+                else
+                {
+                    $code = socket_last_error();
+                    $errorMessage = socket_strerror($code);
+                    throw new Exception("Error receiving service message response from service :". $errorMessage);
+                }
             }
-            catch(Exception $ex)
+            else
             {
-                $methodName = ($request !== null) ? $request->serviceMethod : 'unknown';
-                return new TeeTreeServiceMessage(get_called_class(), $methodName , $ex->getMessage(), TeeTreeServiceMessage::TEETREE_ERROR);
+                throw new Exception("Attempted to receive a message from a non-existant service connection");
             }
-            if(strlen($response) === 0 && $buffer === "\n") $buffer = '';
-            $response .= $buffer;
-        } while ($buffer !== "\n" && !feof($serviceConnection));
-        return TeeTreeServiceMessage::decode($response);
+        }
+        catch(Exception $ex)
+        {
+            throw new Exception("Unable to receive message from service at ". $this->buildServiceConnectString());
+        }
     }
 
     private function say($serviceConnection, $request)
     {
         try
         {
-            if($serviceConnection) fwrite($serviceConnection, $request->getEncoded());
+            if($serviceConnection)
+            {
+                if (!stream_socket_sendto($serviceConnection, $request->getEncoded()))
+                {
+                    $code = socket_last_error();
+                    $errorMessage = socket_strerror($code);
+                    throw new Exception("Error sending service message to service {$request->serviceClass}::{$request->serviceMethod} :". $errorMessage);
+                }
+            }
+            else
+            {
+                throw new Exception("Attempted to send a message on a non-existant service connection");
+            }
         }
         catch(Exception $ex)
         {
@@ -173,6 +195,7 @@ class TeeTreeClient
         }
         else
         {
+            stream_set_timeout($serviceConnection, self::READWRITE_TIMEOUT);
             $this->serviceConnection = $serviceConnection;
         }
     }
