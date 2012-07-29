@@ -23,21 +23,22 @@ class testServiceRepeater
         return "bakatcha:". $retval;
     }
 
-    public function _dontWait($data)
+    public function dontWait($data)
     {
+        $data = serialize($data);
         for($i = 0; $i < 10; $i++)
         {
-            sleep(1);
-            file_put_contents($this->logfile, $i. "\n", FILE_APPEND);
+            usleep(200000);
+            file_put_contents($this->logfile, $i. " - {$data}\n", FILE_APPEND);
         }
-        return "nothing reaches client";
+        return "nothing reaches client unless we wait for it";
     }
 
     public function doLongRunning($data)
     {
         for($i = 0; $i < 10; $i++)
         {
-            sleep(1);
+            usleep(200000);
             file_put_contents($this->logfile, (isset($this->args[0])?$this->args[0]:''). " - ". $i. ":". $data. "\n", FILE_APPEND);
         }
         return (isset($this->args[0])?$this->args[0]:''). " this will get picked up later by the client ". $data;

@@ -35,10 +35,10 @@ class TeeTreeServiceMessage
 
     private function setMessageType($data, $messageType)
     {
-        if($messageType === self::TEETREE_EMPTY && is_array($data))
+        if(!empty($data) && is_array($data) && ($messageType !== self::TEETREE_CONSTRUCTOR))
         {
             $lastElement = end($data);
-            if(is_string($lastElement) && preg_match("/^TEETREE_[A-Z]+$/", $lastElement))
+            if(is_string($lastElement) && preg_match("/^TEETREE_[A-Z_]+$/", $lastElement))
             {
                 $this->serviceMessageType = array_pop($data);
             }
@@ -74,11 +74,11 @@ class TeeTreeServiceMessage
             $message = new self($object->serviceClass, $object->serviceMethod, $object->serviceData, $object->serviceMessageType);
             if($message->serviceMessageType === self::TEETREE_ERROR)
             {
-                throw new Exception($message->serviceData);
+                throw new TeeTreeExceptionMessageReturned($message->serviceData);
             }
             return $message;
         }
-        throw new Exception("Unable to decode service message '". $json. "'");
+        throw new TeeTreeMessageDecodeFailed("Unable to decode service message '". $json. "'");
     }
 }
 ?>

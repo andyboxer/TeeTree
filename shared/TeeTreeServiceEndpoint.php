@@ -8,52 +8,46 @@ class TeeTreeServiceEndpoint
 
     protected function readMessage($serviceConnection)
     {
-        try
+        if($serviceConnection)
         {
-            if($serviceConnection)
+            try
             {
-                if(($response = stream_get_line($serviceConnection, self::MAX_MESSAGE_SIZE, "\n")) !== false)
-                {
-                    return TeeTreeServiceMessage::decode($response);
-                }
-                elseif($code = socket_last_error())
-                {
-                    $errorMessage = socket_strerror($code);
-                    throw new Exception("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " $code :". $errorMessage);
-                }
+                $response = stream_get_line($serviceConnection, self::MAX_MESSAGE_SIZE, "\n");
             }
-            else
+            catch(Exception $ex)
             {
-                throw new Exception("Attempted to receive a message from a non-existant service connection");
+                // new connect exception
+            }
+            if( $response !== false)
+            {
+                return TeeTreeServiceMessage::decode($response);
+            }
+            elseif($code = socket_last_error())
+            {
+                $errorMessage = socket_strerror($code);
+                throw new Exception("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " $code :". $errorMessage);
             }
         }
-        catch(Exception $ex)
+        else
         {
-            throw new Exception("Unable to receive message on ". stream_socket_get_name($serviceConnection, false). " :". $ex->getMessage());
+            throw new Exception("Attempted to receive a message from a non-existant service connection");
         }
     }
 
     protected function writeMessage($serviceConnection, TeeTreeServiceMessage $message)
     {
-        try
+        if($serviceConnection)
         {
-            if($serviceConnection)
+            if (!stream_socket_sendto($serviceConnection, $message->getEncoded()))
             {
-                if (!stream_socket_sendto($serviceConnection, $message->getEncoded()))
-                {
-                    $code = socket_last_error();
-                    $errorMessage = socket_strerror($code);
-                    throw new Exception("Error sending service message to service {$message->serviceClass}::{$message->serviceMethod} :". $errorMessage);
-                }
-            }
-            else
-            {
-                throw new Exception("Attempted to send a message on a non-existant service connection");
+                $code = socket_last_error();
+                $errorMessage = socket_strerror($code);
+                throw new Exception("Error sending service message to service {$message->serviceClass}::{$message->serviceMethod} :". $errorMessage);
             }
         }
-        catch(Exception $ex)
+        else
         {
-            throw new Exception("Unable to send message on ". stream_socket_get_name($serviceConnection, false). " :". $ex->getMessage());
+            throw new Exception("Attempted to send a message on a non-existant service connection");
         }
     }
 
