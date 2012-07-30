@@ -13,7 +13,7 @@ $php $base_path/tests/TeeTreeTest.php
 
 ## multiple simultaneous processes test
 
-$php $base_path/tests/TeeTreeMultiTest.php
+##$php $base_path/tests/TeeTreeMultiTest.php
 
 $php $base_path/server/TeeTreeLauncher.php $servicePort $base_path/tests stop
 
