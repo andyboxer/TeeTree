@@ -9,9 +9,6 @@
 
 class TeeTreeClient extends TeeTreeServiceEndpoint
 {
-    const CONNECT_TIMEOUT = 60;
-    const READWRITE_TIMEOUT = 600;
-
     protected $serviceHost;
     protected $serviceControllerPort;
     protected $servicePort = null;
@@ -102,16 +99,16 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
 
     private function connectServiceController()
     {
-        if (!($serviceServer = stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, self::CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT)))
+        if (!($serviceServer = stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT)))
         {
-            throw new Exception("Unable to connect to service controller at ". $this->buildControllerConnectString());
+            throw new Exception("Unable to connect to service controller at ". $this->buildControllerConnectString(). ". $errstr");
         }
         else
         {
             $request = new TeeTreeServiceMessage(get_called_class(), null, $this->data, TeeTreeServiceMessage::TEETREE_CONSTRUCTOR);
             $response = $this->converse($serviceServer, $request);
             stream_socket_shutdown($serviceServer, STREAM_SHUT_WR);
-            if($response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE)
+            if($response && $response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE)
             {
                 $this->servicePort = $response->serviceData;
             }
@@ -124,13 +121,13 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
 
     private function connectService()
     {
-        if(!($serviceConnection = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, self::CONNECT_TIMEOUT)))
+        if(!($serviceConnection = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT)))
         {
-            throw new Exception("Unable to connect to service at ". $this->buildServiceConnectString());
+            throw new Exception("Unable to connect to service at ". $this->buildServiceConnectString(). ". $errstr");
         }
         else
         {
-            stream_set_timeout($serviceConnection, self::READWRITE_TIMEOUT);
+            stream_set_timeout($serviceConnection, TeeTreeConfiguration::READWRITE_TIMEOUT);
             $this->serviceConnection = $serviceConnection;
         }
     }

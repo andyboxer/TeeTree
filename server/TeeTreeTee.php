@@ -9,9 +9,6 @@
 
 class TeeTreeTee extends TeeTreeServiceEndpoint
 {
-    const ACCEPT_TIMEOUT = 10;
-    const READWRITE_TIMEOUT = 600;
-
     protected $logFile = "/tmp/serviceTest.txt";
     protected $serviceServer = null;
     protected $clientConnectionId = null;
@@ -130,9 +127,9 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
         do
         {
             $this->logger->log("TeeTree worker waiting");
-            if($this->clientConnection = @stream_socket_accept($this->serviceServer, self::ACCEPT_TIMEOUT))
+            if($this->clientConnection = @stream_socket_accept($this->serviceServer, TeeTreeConfiguration::ACCEPT_TIMEOUT))
             {
-                stream_set_timeout($this->clientConnection, self::READWRITE_TIMEOUT);
+                stream_set_timeout($this->clientConnection, TeeTreeConfiguration::READWRITE_TIMEOUT);
                 while(!feof($this->clientConnection))
                 {
                     if($request = $this->readMessage($this->clientConnection))

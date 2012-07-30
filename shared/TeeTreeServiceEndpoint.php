@@ -9,15 +9,13 @@
 
 class TeeTreeServiceEndpoint
 {
-    const MAX_MESSAGE_SIZE = 1000000;
-
     protected function readMessage($serviceConnection)
     {
         if($serviceConnection)
         {
             try
             {
-                $response = @stream_get_line($serviceConnection, self::MAX_MESSAGE_SIZE, "\n");
+                $response = @stream_get_line($serviceConnection, TeeTreeConfiguration::MAX_MESSAGE_SIZE, "\n");
             }
             catch(Exception $ex)
             {
