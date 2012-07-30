@@ -21,7 +21,7 @@ class TeeTreeBootStrap
 
     public static function autoLoad($class)
     {
-        $loaderGlobs = array("shared/", "server/" , "client/");
+        $loaderGlobs = array("shared/", "server/" , "client/", "exceptions/");
         foreach($loaderGlobs as $glob)
         {
             $load_files = glob(self::$BASE_PATH. "/{$glob}{$class}.php");

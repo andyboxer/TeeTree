@@ -135,7 +135,6 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
                 stream_set_timeout($this->clientConnection, self::READWRITE_TIMEOUT);
                 while(!feof($this->clientConnection))
                 {
-                    $this->logger->log("TeeTree worker reading");
                     if($request = $this->readMessage($this->clientConnection))
                     {
                         $this->logger->log("TeeTree worker message received : ". $request->getEncoded());

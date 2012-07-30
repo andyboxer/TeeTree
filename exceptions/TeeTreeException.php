@@ -10,9 +10,10 @@
 class TeeTreeException extends Exception
 {
     // fetch server and client details as available and add to error message
-    const TEETREE_EXCEPTION = 'TT0000';
-    const TEETREE_EXCEPTION_MESSAGE_DECODE_FAILED = 'TT0001';
-    const TEETREE_EXCEPTION_MESSAGE_RETURNED = 'TT0002';
+    const TEETREE_EXCEPTION = '13000';
+    const TEETREE_EXCEPTION_MESSAGE_DECODE_FAILED = '130001';
+    const TEETREE_EXCEPTION_MESSAGE_RETURNED = '130002';
+   /* const TEETREE_EXCEPTION = 'TT00';
     const TEETREE_EXCEPTION = 'TT00';
     const TEETREE_EXCEPTION = 'TT00';
     const TEETREE_EXCEPTION = 'TT00';
@@ -36,13 +37,12 @@ class TeeTreeException extends Exception
     const TEETREE_EXCEPTION = 'TT00';
     const TEETREE_EXCEPTION = 'TT00';
     const TEETREE_EXCEPTION = 'TT00';
-    const TEETREE_EXCEPTION = 'TT00';
-    const TEETREE_EXCEPTION = 'TT00';
+    const TEETREE_EXCEPTION = 'TT00';*/
 
-    public function __construct($message, $code, $previous)
+    public function __construct($message, $code, Exception $previous = null)
     {
         //TODO: add server and connection details here
-        parent::__construct($message, $code, $previous);
+        parent::__construct($message, $code);
     }
 
     private function writeToExceptionLog()

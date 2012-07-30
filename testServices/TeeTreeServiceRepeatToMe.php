@@ -16,7 +16,7 @@ class TeeTreeServiceRepeatToMe
         $this->constructParams = $args;
     }
 
-    public function getContructorParams()
+    public function getConstructorParams()
     {
         return $this->constructParams;
     }
@@ -26,4 +26,6 @@ class TeeTreeServiceRepeatToMe
         $retval = str_shuffle($data[0]);
         return "bakatcha:". $retval;
     }
+
+
 }

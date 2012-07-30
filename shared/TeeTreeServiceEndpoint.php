@@ -17,11 +17,13 @@ class TeeTreeServiceEndpoint
         {
             try
             {
-                $response = stream_get_line($serviceConnection, self::MAX_MESSAGE_SIZE, "\n");
+                $response = @stream_get_line($serviceConnection, self::MAX_MESSAGE_SIZE, "\n");
             }
             catch(Exception $ex)
             {
-                // new connect exception
+                $code = socket_last_error();
+                $errorMessage = socket_strerror($code);
+                throw new Exception("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " $code :". $errorMessage);
             }
             if( $response !== false)
             {
@@ -43,7 +45,7 @@ class TeeTreeServiceEndpoint
     {
         if($serviceConnection)
         {
-            if (!stream_socket_sendto($serviceConnection, $message->getEncoded()))
+            if (!@stream_socket_sendto($serviceConnection, $message->getEncoded()))
             {
                 $code = socket_last_error();
                 $errorMessage = socket_strerror($code);

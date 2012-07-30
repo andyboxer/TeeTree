@@ -7,8 +7,6 @@
  *
  */
 
-require_once('TeeTreeServiceEndpoint.php');
-
 class TeeTreeClient extends TeeTreeServiceEndpoint
 {
     const CONNECT_TIMEOUT = 60;

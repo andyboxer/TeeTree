@@ -28,14 +28,14 @@ class TeeTreeServiceMessage
     {
         $this->serviceClass = $class;
         $this->serviceMethod = $method;
-        $this->serviceData = $data;
         $this->setMessageType($data, $messageType);
+        $this->serviceData = $data;
         if($this->serviceMessageType === self::TEETREE_PORT_MESSAGE) $this->parsePortMessage($data);
     }
 
-    private function setMessageType($data, $messageType)
+    private function setMessageType(&$data, $messageType)
     {
-        if(!empty($data) && is_array($data) && ($messageType !== self::TEETREE_CONSTRUCTOR))
+        if(!empty($data) && is_array($data) && ($messageType === self::TEETREE_EMPTY))
         {
             $lastElement = end($data);
             if(is_string($lastElement) && preg_match("/^TEETREE_[A-Z_]+$/", $lastElement))

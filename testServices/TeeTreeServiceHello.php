@@ -23,7 +23,7 @@ class TeeTreeServiceHello
 
     public function sayHello($data)
     {
-        $data = (object) array("hello" => "world", "TestingTesting" => "this is a test for an object return value\nwith a line break inside");
+        $data = (object) array("hello" => "world", "TestingTesting" => "this is a test \nfor an object return value\nwith line breaks\n inside\n");
         return $data;
     }
 
