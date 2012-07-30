@@ -7,8 +7,7 @@
  *
  */
 
-set_include_path(get_include_path(). PATH_SEPARATOR. __DIR__ . PATH_SEPARATOR. realpath(__DIR__. "/../shared"));
-require_once 'TeeTreeController.php';
+require_once(__DIR__ . "/../config/TeeTreeBootStrap.php");
 
 if(isset($argv) && (count($argv) === 4))
 {

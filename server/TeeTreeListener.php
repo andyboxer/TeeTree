@@ -43,7 +43,7 @@ class TeeTreeListener
         do
         {
             $service_id = self::$serviceId++;
-            $port = TeeTreeController::THREAD_PORT_MIN + $service_id;
+            $port = TeeTreeConfiguration::MINIMUM_SERVICE_PORT + $service_id;
             $in_use = self::port_in_use($port);
         }while($in_use);
         return $service_id;

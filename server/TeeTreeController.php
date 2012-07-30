@@ -7,17 +7,9 @@
  *
  */
 
-require_once 'TeeTreeListener.php';
-require_once 'TeeTreeLogger.php';
-require_once 'TeeTreeServiceMessage.php';
-
 class TeeTreeController
 {
-    // THREAD_PORT_MIN should be greater than the service controller port.
-    // Local system resources will limit the maximum number of service instances allowed
-    const THREAD_PORT_MIN = 11000;
     private static $TeeTreeController = null;
-    private static $logfile = "/tmp/TeeTreeController.log";
     private $listener;
     private $processes = array();
     private $workerPorts = array();
@@ -32,8 +24,8 @@ class TeeTreeController
         if(!isset($GLOBALS['buffers'])) $GLOBALS['buffers'] = array();
         $this->classPath = $classPath;
         $this->servicePort = $port;
-        $this->TeeTreeLogger = new TeeTreeLogger(self::$logfile);
-        $this->TeeTreeLogger->log('Service listener started on port '. $port, SERVICE_LISTENER_START, 'service controller');
+        $this->TeeTreeLogger = new TeeTreeLogger();
+        $this->TeeTreeLogger->log('Service controller started on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_START, 'service controller');
         $this->listener = new TeeTreeListener($this, $port);
     }
 
@@ -42,7 +34,7 @@ class TeeTreeController
     {
         if (is_resource($this->connectTee($id, $pipes)))
         {
-            fwrite($pipes[0], $id . "|". (self::THREAD_PORT_MIN + $id) .  "|". $message);
+            fwrite($pipes[0], $id . "|". (TeeTreeConfiguration::MINIMUM_SERVICE_PORT + $id) .  "|". $message);
             fclose($pipes[0]);
             $data = '';
             do
@@ -60,26 +52,26 @@ class TeeTreeController
 
     private function connectTee($id, &$pipes = array())
     {
-        $command = "/usr/local/zend/bin/php " . __DIR__ . "/TeeTreeMakeTee.php";
+        $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeMakeTee.php";
         $descriptorspec = array(
         0 => array("pipe", "r"),
         1 => array("pipe", "w"),
-        2 => array("file", self::$logfile, "a"));
+        2 => array("file", TeeTreeConfiguration::DEFAULT_ERROR_LOG, "a"));
         return $this->processes[$id] = proc_open($command, $descriptorspec, $pipes, null, array("TEETREE_CLASS_PATH" => $this->classPath, "TEETREE_CONTROLLER_PORT" => $this->servicePort));
     }
 
-    public static function startServer($classPath = __DIR__, $port = 2000)
+    public static function startServer($classPath = __DIR__ , $port = 2000)
     {
-        $TeeTreeLogger = new TeeTreeLogger(self::$logfile);
-        $TeeTreeLogger->log('Service controller starting on port '. $port, SERVICE_CONTROLLER_START, 'service controller');
+        $TeeTreeLogger = new TeeTreeLogger();
+        $TeeTreeLogger->log('Service controller starting on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_START, 'service controller');
 
-        $command = "/usr/local/zend/bin/php ". __DIR__. "/TeeTreeLauncher.php";
+        $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeLauncher.php";
         $descriptorspec = array(
         0 => array("pipe", 'r'),
-        1 => array("file",  "/tmp/TeeTreeLauncher.log", "a"),
-        2 => array("file", "/tmp/serviceInstance-error.log", "a"));
+        1 => array("file",  TeeTreeConfiguration::DEFAULT_SERVER_LOG, "a"),
+        2 => array("file", TeeTreeConfiguration::DEFAULT_ERROR_LOG, "a"));
         self::$TeeTreeController = $process = proc_open($command, $descriptorspec, $pipes, null, array("TEETREE_CLASS_PATH" => $classPath, "TEETREE_CONTROLLER_PORT" => $port));
-        $TeeTreeLogger->log('Service controller started on port '. $port, SERVICE_CONTROLLER_START, 'service controller');
+        $TeeTreeLogger->log('Service controller started on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_START, 'service controller');
     }
 
     public static function stopServer($host, $port)
@@ -93,8 +85,8 @@ class TeeTreeController
             fwrite($serviceServer, "exit\n");
             fflush($serviceServer);
             fclose($serviceServer);
-            $TeeTreeLogger = new TeeTreeLogger(self::$logfile);
-            $TeeTreeLogger->log('Service controller stopped on port '. $port, SERVICE_CONTROLLER_STOP, 'service controller');
+            $TeeTreeLogger = new TeeTreeLogger();
+            $TeeTreeLogger->log('Service controller stopped on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_STOP, 'service controller');
         }
     }
 
@@ -106,6 +98,8 @@ class TeeTreeController
         }
         else
         {
+            $TeeTreeLogger = new TeeTreeLogger();
+            $TeeTreeLogger->log('Service controller ping on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PING, 'service controller');
             fwrite($serviceServer, "ping\n");
             fflush($serviceServer);
             $data = '';
@@ -114,7 +108,11 @@ class TeeTreeController
                 $buffer =  fgets($serviceServer, 2);
                 $data .= $buffer;
             }while ($buffer != "\n");
-            if(preg_match("/^pong\n/", $data)) return true;
+            if(preg_match("/^pong\n/", $data))
+            {
+                $TeeTreeLogger->log('Service controller pong on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PONG, 'service controller');
+                return true;
+            }
         }
         return false;
     }

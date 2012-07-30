@@ -7,15 +7,10 @@
  *
  */
 
-set_include_path(get_include_path(). PATH_SEPARATOR. realpath(__DIR__. "/../client"). PATH_SEPARATOR. realpath(__DIR__. "/../shared"). PATH_SEPARATOR. realpath(__DIR__. "/../server"));
-require_once 'TeeTreeController.php';
-require_once 'TeeTreeClient.php';
-
-// set a port for the service connection
-$testPort = 10700;
+require_once __DIR__ . "/../config/TeeTreeBootStrap.php";
 
 // test for server heartbeat
-if(TeeTreeController::pingServer("localhost", $testPort))
+if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::DEFAULT_SERVICE_PORT))
 {
     echo " --- server heartbeat received\n";
 

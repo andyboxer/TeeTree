@@ -7,8 +7,6 @@
  *
  */
 
-require_once 'TeeTreeServiceEndpoint.php';
-
 class TeeTreeTee extends TeeTreeServiceEndpoint
 {
     const ACCEPT_TIMEOUT = 10;

@@ -6,16 +6,13 @@
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
-require_once __DIR__. '/multi_command.php';
-
-// set a port for the service connection
-$testPort = 10700;
+require_once __DIR__ . "/../config/TeeTreeBootStrap.php";
 
 $multi = new multi_command();
 
 for($i = 0; $i < 20; $i++)
 {
-   $command = "/usr/local/zend/bin/php ". __DIR__. "/runServiceTest.php";
+   $command = TeeTreeConfiguration::PATH_TO_PHP_EXE . " ". __DIR__. "/TeeTreeTest.php";
    $multi->add_command($command);
 }
 

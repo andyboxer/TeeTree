@@ -1,34 +1,29 @@
 <?php
-require_once __DIR__. "/TeeTreeMessageCodes.php";
-require_once __DIR__. "/TeeTreeLogMessage.php";
+/**
+ * @package TeeTree
+ * @author Andrew Boxer
+ * @copyright Andrew Boxer 2012
+ * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
+ *
+ */
 
 class TeeTreeLogger
 {
-    private $logFile = '/tmp/TeeTreeLogger.log';
-
-    public function __construct($logFile)
-    {
-        $this->logFile = $logFile;
-    }
+    const SERVICE_CONTROLLER_START = 'TTSVR02';
+    const SERVICE_CONTROLLER_STOP = 'TTSVR03';
+    const SERVICE_CONTROLLER_PING = 'TTSRV04';
+    const SERVICE_CONTROLLER_PONG = 'TTSVR05';
 
     public function log($message, $code = '0', $source = 'unknown', $filename = null)
     {
         $msg = new TeeTreeLogMessage($message, $code, $source);
-        $this->logMsg($msg, $filename);
+        if($filename === null) $filename = TeeTreeConfiguration::DEFAULT_SERVER_LOG;
+        if((strlen($filename) > 0)) file_put_contents($filename, $msg, FILE_APPEND);
     }
 
-    public function logMsg(TeeTreeLogMessage $msg, $filename = null)
+    public function logException(Exception $e, $source = 'unknown')
     {
-        if($filename === null) $filename = $this->logFile;
-        if((strlen($filename) > 0))
-        {
-            file_put_contents($filename, $msg, FILE_APPEND);
-        }
-    }
-
-    public function logException(Exception $e, $location = 'unknown')
-    {
-        $msg = "ERROR : {$e->getMessage()} \nCODE: {$e->getCode()} \nFILE {$e->getFile()} \nLINE: {$e->getLine()} \nTRACE: {$e->getTraceAsString()} \n";
-        $this->log($msg, $e->getCode(), $location);
+        $msg = "{$e->getMessage()} \nCODE: {$e->getCode()} \nFILE {$e->getFile()} \nLINE: {$e->getLine()} \nTRACE: {$e->getTraceAsString()} \n";
+        $this->log($msg, $e->getCode(), $source, TeeTreeConfiguration::DEFAULT_ERROR_LOG);
     }
 }
