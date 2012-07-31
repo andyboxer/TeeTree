@@ -7,11 +7,11 @@
  *
  */
 
-class TeeTreeExceptionMessageDecodeFailed extends TeeTreeException
+class TeeTreeExceptionServiceClientConnectionFailed extends TeeTreeException
 {
     public function __construct($message)
     {
-       parent::__construct($message, parent::TEETREE_EXCEPTION_MESSAGE_DECODE_FAILED);
+        parent::__construct($message, parent::TEETREE_EXCEPTION_SERVICE_CLIENT_CONNECTION_FAILED);
     }
 }
 ?>

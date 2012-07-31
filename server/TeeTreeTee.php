@@ -9,7 +9,6 @@
 
 class TeeTreeTee extends TeeTreeServiceEndpoint
 {
-    protected $logFile = "/tmp/serviceTest.txt";
     protected $serviceServer = null;
     protected $clientConnectionId = null;
     protected $clientConnection = null;
@@ -20,11 +19,11 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
     private $serviceObject = null;
     private $inPipe = null;
     private $outPipe = null;
-    private $logger;
+    private $logger = null;
 
     public function __construct($glom = "0.0.0.0")
     {
-        $this->logger = new TeeTreeLogger("/tmp/TeeTreecallHandler.log");
+        if(TeeTreeConfiguration::ENABLE_CALL_TRACING) $this->logger = new TeeTreeLogger(TeeTreeConfiguration::CALL_TRACING_LOG);
         $this->classPath = getenv("TEETREE_CLASS_PATH");
         $this->glom = $glom;
         $this->inPipe = fopen('php://stdin','r');
@@ -52,7 +51,7 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
             }
             catch(Exception $ex)
             {
-                throw new Exception("Failed to read constructor message :". $ex->getMessage());
+                throw new TeeTreeExceptionServiceConstructorFailed("Failed to read constructor message :". $ex->getMessage());
             }
             if(preg_match("/^(\d+)\|(\d+)\|(.*)$/", $requestString, $matches))
             {
@@ -61,9 +60,9 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
                 $this->constructMessage = TeeTreeServiceMessage::decode($matches[3]);
                 if($this->constructMessage->serviceMessageType === TeeTreeServiceMessage::TEETREE_CONSTRUCTOR) return;
             }
-            throw new Exception("Request on contructor channel is not a constructor. request '". $requestString. "'");
+            throw new TeeTreeExceptionServiceConstructorFailed("Request on contructor channel is not a constructor. request '". $requestString. "'");
         }
-        throw new Exception("Request channel not open. Request '". $requestString. "'");
+        throw new TeeTreeExceptionServiceConstructorFailed("Request channel not open. Request '". $requestString. "'");
     }
 
     private function openServiceChannel()
@@ -76,12 +75,12 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
                 $portMessage = new TeeTreeServiceMessage($this->constructMessage->serviceClass, null, $this->servicePort, TeeTreeServiceMessage::TEETREE_PORT_MESSAGE);
                 if(!fwrite($this->outPipe, $portMessage->getEncoded()))
                 {
-                    throw new Exception("Unable to send constructor response on port ". $this->servicePort);
+                    throw new TeeTreeExceptionServiceChannelOpenFailed("Unable to send constructor response on port ". $this->servicePort);
                 }
             }
             else
             {
-                throw new Exception("failed to open service channel on port ". $this->servicePort);
+                throw new TeeTreeExceptionServiceChannelOpenFailed("failed to open service channel on port ". $this->servicePort);
             }
         }
         catch (Exception $ex)
@@ -89,7 +88,7 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
             $message = new TeeTreeServiceMessage($this->constructMessage->serviceClass, 'construct', $ex->getMessage(), TeeTreeServiceMessage::TEETREE_ERROR );
             if(!fwrite($this->outPipe, $message->getEncoded()))
             {
-                throw new Exception("Error opening service channel '". $ex->getMessage(). "'");
+                throw new TeeTreeExceptionServiceChannelOpenFailed("Error opening service channel '". $ex->getMessage(). "'");
             }
         }
     }
@@ -126,7 +125,7 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
         //TODO: add security check class name and use secObj
         do
         {
-            $this->logger->log("TeeTree worker waiting");
+            if($this->logger) $this->logger->log("TeeTree worker waiting");
             if($this->clientConnection = @stream_socket_accept($this->serviceServer, TeeTreeConfiguration::ACCEPT_TIMEOUT))
             {
                 stream_set_timeout($this->clientConnection, TeeTreeConfiguration::READWRITE_TIMEOUT);
@@ -134,13 +133,13 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
                 {
                     if($request = $this->readMessage($this->clientConnection))
                     {
-                        $this->logger->log("TeeTree worker message received : ". $request->getEncoded());
+                        if($this->logger) $this->logger->log("TeeTree worker message received : ". $request->getEncoded());
                         $response = $this->executeRequest($request);
                         if($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_CALL_NORETURN
                         && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_FINAL
                         && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE)
                         {
-                            $this->logger->log("TeeTree worker sending response : ". $response->getEncoded());
+                            if($this->logger) $this->logger->log("TeeTree worker sending response : ". $response->getEncoded());
                             $this->writeMessage($this->clientConnection, $response);
                         }
                     }
@@ -155,7 +154,7 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
                 break;
             }
         }while($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE);
-        $this->logger->log("TeeTree worker exiting");
+        if($this->logger) $this->logger->log("TeeTree worker exiting");
     }
 
     private function executeRequest($request)

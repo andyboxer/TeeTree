@@ -47,7 +47,10 @@ class TeeTreeController
             $this->workerPorts[] = trim($data, "\n");
             fclose($pipes[1]);
         }
-        // if failed return error message to client
+        else
+        {
+            throw new TeeTreeExceptionUnableToMakeTee("Unable to create tee for message :". $message);
+        }
     }
 
     private function connectTee($id, &$pipes = array())

@@ -21,7 +21,7 @@ class TeeTreeServiceEndpoint
             {
                 $code = socket_last_error();
                 $errorMessage = socket_strerror($code);
-                throw new Exception("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " $code :". $errorMessage);
+                throw new TeeTreeExceptionMessageRead("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " $code :". $errorMessage);
             }
             if( $response !== false)
             {
@@ -30,12 +30,12 @@ class TeeTreeServiceEndpoint
             elseif($code = socket_last_error())
             {
                 $errorMessage = socket_strerror($code);
-                throw new Exception("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " $code :". $errorMessage);
+                throw new TeeTreeExceptionMessageRead("Error receiving service message response on ". stream_socket_get_name($serviceConnection, false). " $code :". $errorMessage);
             }
         }
         else
         {
-            throw new Exception("Attempted to receive a message from a non-existant service connection");
+            throw new TeeTreeExceptionMessageRead("Attempted to receive a message from a non-existant service connection");
         }
     }
 
@@ -47,12 +47,12 @@ class TeeTreeServiceEndpoint
             {
                 $code = socket_last_error();
                 $errorMessage = socket_strerror($code);
-                throw new Exception("Error sending service message to service {$message->serviceClass}::{$message->serviceMethod} :". $errorMessage);
+                throw new TeeTreeExceptionMessageWrite("Error sending service message to service {$message->serviceClass}::{$message->serviceMethod} :". $errorMessage);
             }
         }
         else
         {
-            throw new Exception("Attempted to send a message on a non-existant service connection");
+            throw new TeeTreeExceptionMessageWrite("Attempted to send a message on a non-existant service connection");
         }
     }
 

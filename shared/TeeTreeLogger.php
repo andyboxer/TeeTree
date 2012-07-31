@@ -21,8 +21,9 @@ class TeeTreeLogger
         if((strlen($filename) > 0)) file_put_contents($filename, $msg, FILE_APPEND);
     }
 
-    public function logException(Exception $e, $source = 'unknown')
+    public function logException(Exception $e, $source = null)
     {
+        if($source === null) $source = $e->getFile();
         $msg = "{$e->getMessage()} \nCODE: {$e->getCode()} \nFILE {$e->getFile()} \nLINE: {$e->getLine()} \nTRACE: {$e->getTraceAsString()} \n";
         $this->log($msg, $e->getCode(), $source, TeeTreeConfiguration::DEFAULT_ERROR_LOG);
     }

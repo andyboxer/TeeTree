@@ -81,7 +81,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
         }
         else
         {
-            throw new Exception("Service controller port not yet set");
+            throw new TeeTreeExceptionBadPortNo("Service controller port not yet set");
         }
     }
 
@@ -93,7 +93,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
         }
         else
         {
-            throw new Exception("Service dialog port not yet set");
+            throw new TeeTreeExceptionBadPortNo("Service dialog port not yet set");
         }
     }
 
@@ -101,7 +101,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
     {
         if (!($serviceServer = stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT)))
         {
-            throw new Exception("Unable to connect to service controller at ". $this->buildControllerConnectString(). ". $errstr");
+            throw new TeeTreeExceptionServerConnectionFailed("Unable to connect to service controller at ". $this->buildControllerConnectString(). ". $errstr");
         }
         else
         {
@@ -114,7 +114,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
             }
             else
             {
-                throw new Exception("Service port message not recieved as response from constructor");
+                throw new TeeTreeExceptionBadPortNo("Service port message not recieved as response from constructor");
             }
         }
     }
@@ -123,7 +123,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
     {
         if(!($serviceConnection = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT)))
         {
-            throw new Exception("Unable to connect to service at ". $this->buildServiceConnectString(). ". $errstr");
+            throw new TeeTreeExceptionServiceClientConnectionFailed("Unable to connect to service at ". $this->buildServiceConnectString(). ". $errstr");
         }
         else
         {
@@ -136,7 +136,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
     {
         if(!$serviceConnection || !is_resource($serviceConnection))
         {
-            throw new Exception("No service connection found to converse with");
+            throw new TeeTreeExceptionClientNotConnected("No service connection found to converse with for request :". $request->getEncoded());
         }
         $this->writeMessage($serviceConnection, $request);
         return $this->readMessage($serviceConnection);

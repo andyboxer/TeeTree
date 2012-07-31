@@ -9,15 +9,15 @@
 
 class TeeTreeServiceMessage
 {
-    const TEETREE_EMPTY = "TEETREE_EMPTY";
-    const TEETREE_CONSTRUCTOR = "TEETREE_CONSTRUCTOR";
-    const TEETREE_PORT_MESSAGE = "TEETREE_PORT_MESSAGE";
-    const TEETREE_CALL = "TEETREE_CALL";
-    const TEETREE_CALL_NOWAIT = "TEETREE_CALL_NOWAIT";
+    const TEETREE_EMPTY         = "TEETREE_EMPTY";
+    const TEETREE_CONSTRUCTOR   = "TEETREE_CONSTRUCTOR";
+    const TEETREE_PORT_MESSAGE  = "TEETREE_PORT_MESSAGE";
+    const TEETREE_CALL          = "TEETREE_CALL";
+    const TEETREE_CALL_NOWAIT   = "TEETREE_CALL_NOWAIT";
     const TEETREE_CALL_NORETURN = "TEETREE_CALL_NORETURN";
-    const TEETREE_FINAL = "TEETREE_FINAL";
-    const TEETREE_TERMINATE = "TEETREE_TERMINATE";
-    const TEETREE_ERROR = "TEETREE_ERROR";
+    const TEETREE_FINAL         = "TEETREE_FINAL";
+    const TEETREE_TERMINATE     = "TEETREE_TERMINATE";
+    const TEETREE_ERROR         = "TEETREE_ERROR";
 
     public $serviceClass = null;
     public $serviceMethod = null;
@@ -78,7 +78,7 @@ class TeeTreeServiceMessage
             }
             return $message;
         }
-        throw new TeeTreeMessageDecodeFailed("Unable to decode service message '". $json. "'");
+        throw new TeeTreeExceptionMessageDecodeFailed("Unable to decode service message '". $json. "'");
     }
 }
 ?>

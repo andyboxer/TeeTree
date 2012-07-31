@@ -34,7 +34,7 @@ class TeeTreeListener
         }
         else
         {
-            throw new Exception("Failed to start service controller on port ". $port);
+            throw new TeeTreeExceptionControllerStartFailed("Failed to start service controller on port ". $port);
         }
     }
 
