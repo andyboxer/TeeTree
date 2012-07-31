@@ -9,7 +9,7 @@
 
 class TeeTreeConfiguration
 {
-    const DEFAULT_SERVICE_PORT = 11311;                                  // the port on which the TeeTree controller has been configured to listen on
+    const TEETREE_SERVER_PORT = 11311;                                   // the port on which the TeeTree controller has been configured to listen
     const MINIMUM_SERVICE_PORT = 12000;                                  // the initial value for service instance message channel ports
     const MAX_MESSAGE_SIZE = 1000000;                                    // maximum size of a TeeTree message, any large than this and you may just be using the wrong mechanism for it's transport.
     const ACCEPT_TIMEOUT = 10;                                           // socket accept timeout for all socket listeners

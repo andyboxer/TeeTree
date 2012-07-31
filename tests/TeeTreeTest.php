@@ -10,7 +10,7 @@
 require_once __DIR__ . "/../config/TeeTreeBootStrap.php";
 
 // test for server heartbeat
-if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::DEFAULT_SERVICE_PORT))
+if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERVER_PORT))
 {
     echo " --- server heartbeat received\n";
 
@@ -22,13 +22,13 @@ if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::DEFAULT_SERV
         class TeeTreeServiceHello extends TeeTreeClient{}
 
         // define a service where we define both host and port for the object proxy to contact the service broker
-        class TeeTreeServiceRepeatToMe extends TeeTreeClient{protected $serviceHost = 'localhost'; protected $serviceControllerPort = TeeTreeConfiguration::DEFAULT_SERVICE_PORT;}
+        class TeeTreeServiceRepeatToMe extends TeeTreeClient{protected $serviceHost = 'localhost'; protected $serviceControllerPort = TeeTreeConfiguration::TEETREE_SERVER_PORT;}
 
         // define a class for testing long running calls and paralell processing
-        class TeeTreeServiceLongRunning extends TeeTreeClient{protected $serviceHost = 'localhost'; protected $serviceControllerPort = TeeTreeConfiguration::DEFAULT_SERVICE_PORT;}
+        class TeeTreeServiceLongRunning extends TeeTreeClient{protected $serviceHost = 'localhost'; protected $serviceControllerPort = TeeTreeConfiguration::TEETREE_SERVER_PORT;}
 
         // create an instance using paramters for host and port
-        $helloService = new TeeTreeServiceHello("host:localhost", "port:". TeeTreeConfiguration::DEFAULT_SERVICE_PORT, array("contructor_gets_these" => "data"));
+        $helloService = new TeeTreeServiceHello("host:localhost", "port:". TeeTreeConfiguration::TEETREE_SERVER_PORT, array("contructor_gets_these" => "data"));
 
         print("\nWe now call back the constructor params we instantiated this object with\n");
         // check we have correctly set the construcion parameters

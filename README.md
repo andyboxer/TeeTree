@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The TeeTree remote service invocation mechanism has been built using pure php to provide asynchronous remote procedure calls.
+The TeeTree remote service invocation mechanism has been implemented entirely in php to provide asynchronous remote procedure calls.
 
 ### Pre-requisites
 
@@ -21,4 +21,13 @@ If your TeeTree installation is at <<somewhere>> and your php executable at <<ph
 This will start the TeeTree controller running on port 11311 and it will expect to find it's service classes defined in the <<somewhere>>/testServices directory.
 
 Both of these parameters may bet set to suit your needs/environments, please NOTE: The correct port number used for the TeeTree controller must be set in the <<somewhere>>/config/TeeTreeConfiguration.php file.
+
+### Tests
+
+In order to run the test script first ensure the correct path to the php executable is set in the TeeTreeConfiguration.php file, that the directory /var/log/TeeTree exists and is writeable for all 
+and that the base and php variables in the tests/runTests.sh file are correctly set for your environment.
+
+From a command line execute the runTests.sh script, test results will be printed to stdout and diagnostic data will be written to the logs in the /var/log/TeeTree directory.
+
+All tests will run using hostname localhost and port 11311, unless configured otherwise.
 
