@@ -69,27 +69,29 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
     {
         try
         {
-            if($this->serviceServer = stream_socket_server ('tcp://'. $this->glom. ':'.$this->servicePort, $errno, $errstr))
-            {
-                stream_set_blocking($this->serviceServer, 0);
-                $portMessage = new TeeTreeServiceMessage($this->constructMessage->serviceClass, null, $this->servicePort, TeeTreeServiceMessage::TEETREE_PORT_MESSAGE);
-                if(!fwrite($this->outPipe, $portMessage->getEncoded()))
-                {
-                    throw new TeeTreeExceptionServiceChannelOpenFailed("Unable to send constructor response on port ". $this->servicePort);
-                }
-            }
-            else
-            {
-                throw new TeeTreeExceptionServiceChannelOpenFailed("failed to open service channel on port ". $this->servicePort);
-            }
+            $this->serviceServer = stream_socket_server ('tcp://'. $this->glom. ':'.$this->servicePort, $errno, $errstr);
         }
         catch (Exception $ex)
         {
             $message = new TeeTreeServiceMessage($this->constructMessage->serviceClass, 'construct', $ex->getMessage(), TeeTreeServiceMessage::TEETREE_ERROR );
             if(!fwrite($this->outPipe, $message->getEncoded()))
             {
-                throw new TeeTreeExceptionServiceChannelOpenFailed("Error opening service channel '". $ex->getMessage(). "'");
+                throw new TeeTreeExceptionServiceChannelOpenFailed("Error opening service channel on port ". $this->servicePort. ": '". $ex->getMessage(). "'");
             }
+        }
+
+        if($this->serviceServer)
+        {
+            stream_set_blocking($this->serviceServer, 0);
+            $portMessage = new TeeTreeServiceMessage($this->constructMessage->serviceClass, null, $this->servicePort, TeeTreeServiceMessage::TEETREE_PORT_MESSAGE);
+            if(!fwrite($this->outPipe, $portMessage->getEncoded()))
+            {
+                throw new TeeTreeExceptionServiceChannelOpenFailed("Unable to send constructor response on port ". $this->servicePort);
+            }
+        }
+        else
+        {
+            throw new TeeTreeExceptionServiceChannelOpenFailed("failed to open service channel on port ". $this->servicePort);
         }
     }
 
