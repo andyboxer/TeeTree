@@ -16,7 +16,7 @@ The configuration is kept in a static const model for speed of execution. Paths 
 
 If your TeeTree installation is at \<\<somewhere\>\> and your php executable at \<\<php\>\> then in order to launch the TeeTreeController process one should execute the following:
 
-    \<\<php\>\> \<\<somewhere\>\>/server/TeeTreeLauncher.php 11311 \<\<somewhere\>\>/testServices start &
+    <<php>> <<somewhere>>/server/TeeTreeLauncher.php 11311 <<somewhere>>/testServices start &
 
 This will start the TeeTree controller running on port 11311 and it will expect to find it's service classes defined in the \<\<somewhere\>\>/testServices directory.
 
@@ -31,3 +31,6 @@ From a command line execute the runTests.sh script, test results will be printed
 
 All tests will run using hostname localhost and port 11311, unless configured otherwise.
 
+### Quick Start
+
+In order to get you off the ground quickly with TeeTree a fully functional example application with brief documentation may be found at <https://github.com/andyboxer/TeeTreeExample>
