@@ -7,6 +7,7 @@
  *
  */
 
+require_once __DIR__. "/../testServices/TeeTreeConfiguration.php";
 require_once __DIR__ . "/../config/TeeTreeBootStrap.php";
 
 // test for server heartbeat
