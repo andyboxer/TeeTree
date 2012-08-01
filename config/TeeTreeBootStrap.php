@@ -7,8 +7,6 @@
  *
  */
 
-require_once(__DIR__. "/TeeTreeConfiguration.php");
-
 class TeeTreeBootStrap
 {
     public static $BASE_PATH;
