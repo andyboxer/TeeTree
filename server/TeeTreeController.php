@@ -68,7 +68,7 @@ class TeeTreeController
         $TeeTreeLogger = new TeeTreeLogger();
         $TeeTreeLogger->log('Service controller starting on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_START, 'service controller');
 
-        $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeLauncher.php";
+        $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeLauncher.php ". $port. " \"{$classPath}\" start &";
         $descriptorspec = array(
         0 => array("pipe", 'r'),
         1 => array("file",  TeeTreeConfiguration::DEFAULT_SERVER_LOG, "a"),
