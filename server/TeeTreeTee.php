@@ -69,30 +69,66 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
     {
         try
         {
-            $this->serviceServer = stream_socket_server ('tcp://'. $this->glom. ':'.$this->servicePort, $errno, $errstr);
+            $this->serviceServer = @stream_socket_server ('tcp://'. $this->glom. ':'.$this->servicePort, $errno, $errstr);
         }
         catch (Exception $ex)
         {
-            $message = new TeeTreeServiceMessage($this->constructMessage->serviceClass, 'construct', $ex->getMessage(), TeeTreeServiceMessage::TEETREE_ERROR );
-            if(!fwrite($this->outPipe, $message->getEncoded()))
-            {
-                throw new TeeTreeExceptionServiceChannelOpenFailed("Error opening service channel on port ". $this->servicePort. ": '". $ex->getMessage(). "'");
-            }
+            $this->writeConstructResponse($ex);
+            return;
         }
 
-        if($this->serviceServer)
+        if(is_resource($this->serviceServer))
         {
             stream_set_blocking($this->serviceServer, 0);
-            $portMessage = new TeeTreeServiceMessage($this->constructMessage->serviceClass, null, $this->servicePort, TeeTreeServiceMessage::TEETREE_PORT_MESSAGE);
-            if(!fwrite($this->outPipe, $portMessage->getEncoded()))
-            {
-                throw new TeeTreeExceptionServiceChannelOpenFailed("Unable to send constructor response on port ". $this->servicePort);
-            }
+            $this->writeConstructResponse();
         }
         else
         {
-            throw new TeeTreeExceptionServiceChannelOpenFailed("failed to open service channel on port ". $this->servicePort);
+            $this->writeConstructResponse( new TeeTreeExceptionServiceChannelOpenFailed("failed to open service channel on port ". $this->servicePort));
         }
+    }
+
+    private function writeConstructResponse($ex = null)
+    {
+        if($ex !== null)
+        {
+            $message = new TeeTreeServiceMessage($this->constructMessage->serviceClass, 'construct', $ex->getMessage(), TeeTreeServiceMessage::TEETREE_ERROR );
+        }
+        else
+        {
+            $message = new TeeTreeServiceMessage($this->constructMessage->serviceClass, null, $this->servicePort, TeeTreeServiceMessage::TEETREE_PORT_MESSAGE);
+        }
+
+        $retry = 0;
+        do
+        {
+            try
+            {
+                if(is_resource($this->outPipe))
+                {
+                    usleep(100);
+                    $messageString = $message->getEncoded();
+                    $success = fwrite($this->outPipe, $message->getEncoded(), strlen($message->getEncoded()));
+                }
+                else
+                {
+                    $success = 1;
+                }
+            }
+            catch(Exception $ex)
+            {
+                if($this->logger) $this->logger->log("ERROR:". $ex->getMessage());
+                break;
+            }
+        }while(!$success && ($retry++ < TeeTreeConfiguration::CONTRUCTOR_MAX_RETRY));
+        /*
+         * I think I can ignore this as the client sees a dropped connection and retries on a different port
+         *
+         * if(!$success)
+        {
+            throw new TeeTreeExceptionServiceChannelOpenFailed("Error opening service channel on port ". $this->servicePort);
+        }*/
+
     }
 
     private function createInstance()
