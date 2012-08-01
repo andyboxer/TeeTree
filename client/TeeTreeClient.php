@@ -99,29 +99,44 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
 
     private function connectServiceController()
     {
-        if (!($serviceServer = stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT)))
+        $tries = 0;
+        do
         {
-            throw new TeeTreeExceptionServerConnectionFailed("Unable to connect to service controller at ". $this->buildControllerConnectString(). ". $errstr");
-        }
-        else
+            usleep(100 * $tries);
+            $serviceClient = @stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT);
+        } while(!$serviceClient && ($tries++ < TeeTreeConfiguration::CONTRUCTOR_MAX_RETRY));
+
+        if($serviceClient)
         {
+            $this->servicePort = null;
+            $tries = 0;
             $request = new TeeTreeServiceMessage(get_called_class(), null, $this->data, TeeTreeServiceMessage::TEETREE_CONSTRUCTOR);
-            $response = $this->converse($serviceServer, $request);
-            stream_socket_shutdown($serviceServer, STREAM_SHUT_WR);
-            if($response && $response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE)
+            do
             {
-                $this->servicePort = $response->serviceData;
-            }
-            else
+                $response = $this->converse($serviceClient, $request);
+
+                if($response && $response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE)
+                {
+                    $this->servicePort = $response->serviceData;
+                    break;
+                }
+
+            }while($tries++ < TeeTreeConfiguration::CONTRUCTOR_MAX_RETRY);
+            if($this->servicePort === null)
             {
                 throw new TeeTreeExceptionBadPortNo("Service port message not recieved as response from constructor");
             }
+            stream_socket_shutdown($serviceClient, STREAM_SHUT_WR);
+        }
+        else
+        {
+            throw new TeeTreeExceptionServerConnectionFailed("Unable to connect to service controller at ". $this->buildControllerConnectString(). ". $errstr");
         }
     }
 
     private function connectService()
     {
-        if(!($serviceConnection = stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT)))
+        if(!($serviceConnection = @stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT)))
         {
             throw new TeeTreeExceptionServiceClientConnectionFailed("Unable to connect to service at ". $this->buildServiceConnectString(). ". $errstr");
         }
