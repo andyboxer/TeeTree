@@ -35,17 +35,17 @@ class TeeTreeServiceMessage
 
     private function setMessageType(&$data, $messageType)
     {
-        if(!empty($data) && is_array($data) && ($messageType === self::TEETREE_EMPTY))
+        if($messageType === self::TEETREE_EMPTY)
         {
-            $lastElement = end($data);
-            if(is_string($lastElement) && preg_match("/^TEETREE_[A-Z_]+$/", $lastElement))
+            if(!empty($data) && is_array($data))
             {
-                $this->serviceMessageType = array_pop($data);
+                $lastElement = end($data);
+                if(is_string($lastElement) && preg_match("/^TEETREE_[A-Z_]+$/", $lastElement))
+                {
+                    return $this->serviceMessageType = array_pop($data);
+                }
             }
-            else
-            {
-                $this->serviceMessageType = self::TEETREE_CALL;
-            }
+            $this->serviceMessageType = self::TEETREE_CALL;
         }
         else
         {
