@@ -11,7 +11,7 @@ require_once __DIR__ . "/../config/TeeTreeBootStrap.php";
 
 $multi = new multi_command();
 
-for($i = 0; $i < 20; $i++)
+for($i = 0; $i < 50; $i++)
 {
    $command = TeeTreeConfiguration::PATH_TO_PHP_EXE . " ". __DIR__. "/TeeTreeTest.php";
    $multi->add_command($command);
@@ -19,10 +19,19 @@ for($i = 0; $i < 20; $i++)
 
 $multi->execute();
 
+$md5s = array();
 foreach($multi->get_commands() as $command)
 {
-    print_r($command['response']);
+    $md5 = "NO MD5?\n";
+    preg_match("/MD5:(\w+)\n/", $command['response'], $matches);
+    if(isset($matches[1]))
+    {
+        if(!isset($md5s[$matches[1]])) $md5s[$matches[1]] = 0;
+        $md5s[$matches[1]]++;
+        print($matches[1]. "\n");
+    }
+    print('.');
 }
-
+print("\n". print_r($md5s, true). "\n");
 ?>
 
