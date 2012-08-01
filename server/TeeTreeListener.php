@@ -1,40 +1,40 @@
 <?php
 /**
- * @package objectServices
+ * @package TeeTree
  * @author Andrew Boxer
  * @copyright Andrew Boxer 2012
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
 
-class serviceListener
+class TeeTreeListener
 {
     private $socket;
     private $base;
     private $socketName;
     private $socketPort;
     private $events = array();
-    private static $serviceController;
+    private static $TeeTreeController;
     private static $serviceId = 0;
 
 
     public function __construct($controller, $port)
     {
-        self::$serviceController = $controller;
+        self::$TeeTreeController = $controller;
         $this->socketPort = $port;
         if($this->socket = stream_socket_server ('tcp://0.0.0.0:'. $port, $errno, $errstr))
         {
             stream_set_blocking($this->socket, 0);
             $this->base = event_base_new();
             $this->event = event_new();
-            event_set($this->event, $this->socket, EV_READ | EV_PERSIST, 'serviceListener::eventAccept', $this->base);
+            event_set($this->event, $this->socket, EV_READ | EV_PERSIST, 'TeeTreeListener::eventAccept', $this->base);
             event_base_set($this->event, $this->base);
             event_add($this->event);
             event_base_loop($this->base);
         }
         else
         {
-            throw new Exception("Failed to start service controller on port ". $port);
+            throw new TeeTreeExceptionControllerStartFailed("Failed to start service controller on port ". $port);
         }
     }
 
@@ -43,10 +43,17 @@ class serviceListener
         do
         {
             $service_id = self::$serviceId++;
-            $port = serviceController::THREAD_PORT_MIN + $service_id;
-            $in_use = utils::port_in_use($port);
+            $port = TeeTreeConfiguration::MINIMUM_SERVICE_PORT + $service_id;
+            $in_use = self::port_in_use($port);
         }while($in_use);
         return $service_id;
+    }
+
+    private static function port_in_use($port)
+    {
+        $cmd = "netstat -nl -A inet | awk 'BEGIN {FS=\"[ :]+\"}{print $5}' | grep ". $port;
+        $result = shell_exec($cmd);
+        return strlen($result) > 0;
     }
 
 
@@ -55,7 +62,7 @@ class serviceListener
         $service_id = self::set_service_id();
         $connection = stream_socket_accept($socket);
         stream_set_blocking($connection, 0);
-        $buffer = event_buffer_new($connection, 'serviceListener::eventRead', null, 'serviceListener::eventError', $service_id);
+        $buffer = event_buffer_new($connection, 'TeeTreeListener::eventRead', null, 'TeeTreeListener::eventError', $service_id);
         event_buffer_base_set($buffer, $base);
         event_buffer_timeout_set($buffer, 60, 60);
         event_buffer_watermark_set($buffer, EV_READ, 0, 0xffffff);
@@ -81,11 +88,11 @@ class serviceListener
         }
         try
         {
-            self::$serviceController->spawnWorker($id, $message);
+            self::$TeeTreeController->makeTee($id, $message);
         }
         catch(Exception $ex)
         {
-            $errorMessage = new serviceMessage('Listener', 'error', $message. "|". $ex->getMessage(), true);
+            $errorMessage = new TeeTreeServiceMessage('Listener', null, $message. "|". $ex->getMessage(), TeeTreeServiceMessage::TEETREE_ERROR);
             if(isset($GLOBALS['connections'][$id]))
             fwrite($GLOBALS['connections'][$id], $errorMessage->getEncoded());
         }

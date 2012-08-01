@@ -1,24 +1,29 @@
 <?php
 /**
- * @package objectServices
+ * @package TeeTree
  * @author Andrew Boxer
  * @copyright Andrew Boxer 2012
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
 
-class testServiceHello
+class TeeTreeServiceHello
 {
-    private $rawArguments = null;
+    private $constructParams = null;
 
     public function __construct($args = null)
     {
-        $this->rawArguments = $args;
+        $this->constructParams = $args;
+    }
+
+    public function getConstructorParams()
+    {
+        return $this->constructParams;
     }
 
     public function sayHello($data)
     {
-        $data = (object) array("test1" => "this is a test for an object return value");
+        $data = (object) array("hello" => "world", "TestingTesting" => "this is a test \nfor an object return value\nwith line breaks\n inside\n");
         return $data;
     }
 
