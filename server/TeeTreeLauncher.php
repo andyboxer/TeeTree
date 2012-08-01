@@ -14,11 +14,26 @@ if(isset($argv) && (count($argv) === 4))
 
     if($argv[3] === 'start')
     {
-        $controller = new TeeTreeController($argv[2], $argv[1]);
+        try
+        {
+            $controller = new TeeTreeController($argv[2], $argv[1]);
+        }
+        catch(TeeTreeException $ex)
+        {
+            print("Failed to start TeeTree Controller error message = ". $ex->getMessage());
+        }
     }
     elseif($argv[3] === 'stop')
     {
-        TeeTreeController::stopServer('localhost', $argv[1]);
+        try
+        {
+            TeeTreeController::stopServer('localhost', $argv[1]);
+        }
+        catch(TeeTreeException $ex)
+        {
+            print("Failed to stop TeeTree Controller error message = ". $ex->getMessage());
+        }
+
     }
 }
 else
