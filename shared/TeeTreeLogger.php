@@ -14,11 +14,18 @@ class TeeTreeLogger
     const SERVICE_CONTROLLER_PING = 'TTSRV04';
     const SERVICE_CONTROLLER_PONG = 'TTSVR05';
 
+    private $logFile =  TeeTreeConfiguration::DEFAULT_SERVER_LOG;
+
+    public function __construct($filename = null)
+    {
+        if($filename !== null) $this->logFile = $filename;
+    }
+
     public function log($message, $code = '0', $source = 'unknown', $filename = null)
     {
         $msg = new TeeTreeLogMessage($message, $code, $source);
-        if($filename === null) $filename = TeeTreeConfiguration::DEFAULT_SERVER_LOG;
-        if((strlen($filename) > 0)) file_put_contents($filename, $msg, FILE_APPEND);
+        if($filename === null) $filename = $this->logFile;
+        file_put_contents($filename, $msg, FILE_APPEND);
     }
 
     public function logException(Exception $e, $source = null)
