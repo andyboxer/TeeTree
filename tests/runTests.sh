@@ -15,5 +15,5 @@ $php $base_path/tests/TeeTreeTest.php
 
 ##$php $base_path/tests/TeeTreeMultiTest.php
 
-$php $base_path/server/TeeTreeLauncher.php $servicePort $base_path/tests stop
+$php $base_path/server/TeeTreeLauncher.php $servicePort $base_path/testServices stop
 
