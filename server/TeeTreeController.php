@@ -29,6 +29,26 @@ class TeeTreeController
         $this->listener = new TeeTreeListener($this, $port);
     }
 
+    public function __destruct()
+    {
+        $this->closeFinishedProcesses();
+    }
+
+    private function closeFinishedProcesses()
+    {
+        foreach($this->processes as $key => $process)
+        {
+            if(is_resource($process))
+            {
+                $status = proc_get_status($process);
+                if(!$status['running'])
+                {
+                    proc_close($process);
+                    unset($this->processes[$key]);
+                }
+            }
+        }
+    }
 
     public function makeTee($id, $message)
     {
@@ -51,6 +71,7 @@ class TeeTreeController
         {
             throw new TeeTreeExceptionUnableToMakeTee("Unable to create tee for message :". $message);
         }
+        $this->closeFinishedProcesses();
     }
 
     private function connectTee($id, &$pipes = array())
@@ -74,14 +95,13 @@ class TeeTreeController
         1 => array("file",  TeeTreeConfiguration::DEFAULT_SERVER_LOG, "a"),
         2 => array("file", TeeTreeConfiguration::DEFAULT_ERROR_LOG, "a"));
         self::$TeeTreeController = $process = proc_open($command, $descriptorspec, $pipes, null, array("TEETREE_CLASS_PATH" => $classPath, "TEETREE_CONTROLLER_PORT" => $port));
-        $TeeTreeLogger->log('Service controller started on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_START, 'service controller');
     }
 
     public static function stopServer($host, $port)
     {
-        if (!($serviceServer = stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
+        if (!($serviceServer = @stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
         {
-            echo "error in server stop $errstr ($errno)<br />\n";
+            throw new TeeTreeExceptionServerConnectionFailed($errstr);
         }
         else
         {
@@ -97,7 +117,7 @@ class TeeTreeController
     {
         if (!($serviceServer = stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
         {
-            echo "error in server ping $errstr ($errno)<br />\n";
+            throw new TeeTreeExceptionServerConnectionFailed($errstr);
         }
         else
         {
