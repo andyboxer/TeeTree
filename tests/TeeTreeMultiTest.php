@@ -6,6 +6,7 @@
  * @license Released under version 3 of the GNU public license - pls see http://www.opensource.org/licenses/gpl-3.0.html
  *
  */
+require_once __DIR__. "/../testServices/TeeTreeConfiguration.php";
 require_once __DIR__ . "/../config/TeeTreeBootStrap.php";
 
 $multi = new multi_command();
