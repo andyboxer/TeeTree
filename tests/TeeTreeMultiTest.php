@@ -13,7 +13,7 @@ $multi = new multi_command();
 
 for($i = 0; $i < 50; $i++)
 {
-   $command = TeeTreeConfiguration::PATH_TO_PHP_EXE . " ". __DIR__. "/TeeTreeTest.php";
+   $command = TeeTreeConfiguration::PATH_TO_PHP_EXE . " ". __DIR__. "/TeeTreeTest.php ". $i;
    $multi->add_command($command);
 }
 

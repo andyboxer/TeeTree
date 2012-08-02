@@ -10,6 +10,10 @@
 require_once __DIR__. "/../testServices/TeeTreeConfiguration.php";
 require_once __DIR__ . "/../bootstrap/TeeTreeBootStrap.php";
 
+//
+
+$idx = (isset($argv[1])) ? $argv[1] : 0;
+
 // test for server heartbeat
 if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERVER_PORT))
 {
@@ -45,11 +49,13 @@ if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERV
         // create another instance of the same service class
         $longRunnerTwo = new TeeTreeServiceLongRunning("Long running service no.2");
 
-        // call a method which we can come back to later to get it's results
+        // call a method which we can come back to later to get it's results, note the use of the call time modifier TEETREE_CALL_NOWAIT
+        // to indicate to the service instance that we do not wish to wait for a response ( we will pick it up later ).
         $longRunnerOne->doLongRunning("no wait call no.1", TeeTreeServiceMessage::TEETREE_CALL_NOWAIT);
 
         // call a method which we can come back to later to get it's results again ( this will run after the above call has completed )
-        $longRunnerOne->doLongRunning("no wait call no.2", TeeTreeServiceMessage::TEETREE_CALL_NOWAIT);
+        // this time we use the method name to indicate we do not wish to wait for this method call to complete
+        $longRunnerOne->doLongRunning_NOWAIT("no wait call no.2");
 
         print("\nWhile they run we'll call a different object method\n");
         // ordinary blocking call on a remote object
@@ -61,7 +67,7 @@ if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERV
         print("\nStarting twenty fire and forget method calls\n");
         for($loop = 0; $loop < 10; $loop++)
         {
-            $longRunnerTwo->doLongRunning("not waiting for this no.". $loop, TeeTreeServiceMessage::TEETREE_CALL_NORETURN);
+            $longRunnerTwo->doLongRunning_NORETURN("not waiting for this no.". $loop);
         }
 
         print("That done we'll call another method on the other object\n");
@@ -103,10 +109,11 @@ if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERV
         // now for some parallel processing
         // create and call the same object and method several times, each object instantiated will represent a different remote object
         // and each call will execute consecutively
-        for($loop = 0; $loop < 10; $loop++)
+        $no_of_iterations = 10;
+        for($loop = 0; $loop < $no_of_iterations; $loop++)
         {
             $services[] = $service = new TeeTreeServiceLongRunning($loop);
-            $service->doLongRunning( "consecutive:". $loop, TeeTreeServiceMessage::TEETREE_CALL_NOWAIT);
+            $service->doLongRunning_NOWAIT( "consecutive {$idx} :". $loop);
         }
 
         // now we call the same logging method as above but this time we wait for completion,
@@ -116,7 +123,7 @@ if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERV
         print_r($result);
 
         // now gather the responses from the above consecutive calls, the reads here will block until all threads have returned
-        for($loop = 0; $loop < 10; $loop++)
+        for($loop = 0; $loop < $no_of_iterations; $loop++)
         {
             $results[] = $services[$loop]->getLastResponse();
         }
