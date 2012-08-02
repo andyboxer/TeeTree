@@ -45,6 +45,12 @@ class TeeTreeServiceMessage
                     return $this->serviceMessageType = array_pop($data);
                 }
             }
+            if(preg_match("/^(\w+)_(NOWAIT|NORETURN)$/", $this->serviceMethod, $matches))
+            {
+               $this->serviceMethod = $matches[1];
+               return $this->serviceMessageType = (($matches[2] === 'NOWAIT') ? self::TEETREE_CALL_NOWAIT : (($matches[2] === 'NORETURN') ? self::TEETREE_CALL_NORETURN :  self::TEETREE_CALL));
+
+            }
             $this->serviceMessageType = self::TEETREE_CALL;
         }
         else
