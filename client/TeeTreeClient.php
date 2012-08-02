@@ -236,8 +236,8 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
             $request = new TeeTreeServiceMessage(get_called_class(), null, $this->data, TeeTreeServiceMessage::TEETREE_CONSTRUCTOR);
             do
             {
+                usleep(100);
                 $response = $this->converse($serviceClient, $request);
-
                 if($response && $response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE)
                 {
                     $this->servicePort = $response->serviceData;
