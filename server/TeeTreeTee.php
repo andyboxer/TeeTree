@@ -121,14 +121,6 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
                 break;
             }
         }while(!$success && ($retry++ < TeeTreeConfiguration::CONTRUCTOR_MAX_RETRY));
-        /*
-         * I think I can ignore this as the client sees a dropped connection and retries on a different port
-         *
-         * if(!$success)
-        {
-            throw new TeeTreeExceptionServiceChannelOpenFailed("Error opening service channel on port ". $this->servicePort);
-        }*/
-
     }
 
     private function createInstance()
