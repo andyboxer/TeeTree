@@ -9,7 +9,7 @@
 if($classPath = getenv("TEETREE_CLASS_PATH"))
 {
     require_once($classPath. "/TeeTreeConfiguration.php");
-    require_once(__DIR__ . "/../config/TeeTreeBootStrap.php");
+    require_once(__DIR__ . "/../bootstrap/TeeTreeBootStrap.php");
     $tee = new TeeTreeTee();
     die();
 }
