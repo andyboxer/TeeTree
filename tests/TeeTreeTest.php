@@ -119,9 +119,8 @@ if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERV
         for($loop = 0; $loop < 10; $loop++)
         {
             $results[] = $services[$loop]->getLastResponse();
-            print("MD5:". md5(serialize($results)). "\n");
         }
-        print_r($results);
+        print("MD5:". md5(serialize($results)). "\n");
 
     }
     catch(Exception $ex)
