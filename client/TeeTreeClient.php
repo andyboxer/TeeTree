@@ -125,7 +125,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
 
     /**
      *
-     * Overrides the __call magick method in order to capture method calls on the instantiated object
+     * Overrides the __call magic method in order to capture method calls on the instantiated object
      * The method call is translated into a remote service request and sent to the TeeTree service instance.
      * Depending upone the type of the method call the return value may be collected in the following modes
      *
