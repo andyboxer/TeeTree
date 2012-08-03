@@ -163,6 +163,7 @@ class TeeTreeController
      */
     private function findWaitingProcess($class)
     {
+        usort($this->processes, function($a, $b){return ($a->id === $b->id) ? 0 : (($a->id < $b->id) ? 1 : -1);} );
         foreach($this->processes as $process)
         {
             if(($process->serviceClass == $class) && $process->isUsable() ) return $process;
