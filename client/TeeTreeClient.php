@@ -120,7 +120,11 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
     public final function finishTee()
     {
         $request = new TeeTreeServiceMessage(get_called_class(), null, null, TeeTreeServiceMessage::TEETREE_FINAL);
-        if($this->serviceConnection) $this->writeMessage($this->serviceConnection, $request);
+        if($this->serviceConnection)
+        {
+            $this->writeMessage($this->serviceConnection, $request);
+            stream_socket_shutdown($this->serviceConnection, STREAM_SHUT_RDWR);
+        }
     }
 
     /**
@@ -167,9 +171,9 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
 
     /**
      *
-	 * This method will read a response message from the remote service client.
-	 * It will wait until a full line has been returned from the client
-	 * Or the read time out ( see the TeeTreeConfiguration file for details on timeouts
+     * This method will read a response message from the remote service client.
+     * It will wait until a full line has been returned from the client
+     * Or the read time out ( see the TeeTreeConfiguration file for details on timeouts
      */
     public final function getLastResponse()
     {
@@ -193,7 +197,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
         }
     }
 
-     /**
+    /**
      *
      * Convenience method to build the TeeTree remote service connection string
      * Ensuring a valid remote service port has been set.
@@ -225,31 +229,32 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
         $tries = 0;
         do
         {
-            usleep(100 * $tries);
-            $serviceClient = @stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT);
-        } while(!$serviceClient && ($tries++ < TeeTreeConfiguration::CONTRUCTOR_MAX_RETRY));
+            usleep(TeeTreeConfiguration::CONSTRUCTOR_RETRY_DELAY * $tries);
+            $serviceController = @stream_socket_client($this->buildControllerConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT);
+        } while(!$serviceController && ($tries++ < TeeTreeConfiguration::CONSTRUCTOR_MAX_RETRY));
 
-        if($serviceClient)
+        if($serviceController)
         {
             $this->servicePort = null;
             $tries = 0;
             $request = new TeeTreeServiceMessage(get_called_class(), null, $this->data, TeeTreeServiceMessage::TEETREE_CONSTRUCTOR);
             do
             {
-                usleep(100);
-                $response = $this->converse($serviceClient, $request);
-                if($response && $response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE)
+                usleep(TeeTreeConfiguration::CONSTRUCTOR_RETRY_DELAY * $tries);
+                $response = $this->converse($serviceController, $request);
+                if($response && ($response->serviceMessageType === TeeTreeServiceMessage::TEETREE_PORT_MESSAGE) && (strlen($response->serviceData) > 0))
                 {
                     $this->servicePort = $response->serviceData;
                     break;
                 }
 
-            }while($tries++ < TeeTreeConfiguration::CONTRUCTOR_MAX_RETRY);
+            }while($tries++ < TeeTreeConfiguration::CONSTRUCTOR_MAX_RETRY);
             if($this->servicePort === null)
             {
-                throw new TeeTreeExceptionBadPortNo("Service port message not recieved as response from constructor");
+                if(is_resource($serviceController)) stream_socket_shutdown($serviceController, STREAM_SHUT_WR);
+                throw new TeeTreeExceptionBadPortNo("Service port message not recieved as response from constructor: ". $response->getEncoded());
             }
-            stream_socket_shutdown($serviceClient, STREAM_SHUT_WR);
+            if(is_resource($serviceController)) stream_socket_shutdown($serviceController, STREAM_SHUT_WR);
         }
         else
         {
