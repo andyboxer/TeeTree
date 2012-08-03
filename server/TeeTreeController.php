@@ -7,17 +7,38 @@
  *
  */
 
+/**
+ *
+ * This class provides the TeeTree Remote Service Invocation controller
+ * This class is used to controll and monitor the TeeTree service listener
+ * it acts as a bridge between client and server during object instantiation.
+ *
+ */
 class TeeTreeController
 {
+    // A static singleton instance of the TeeTree controller
     private static $TeeTreeController = null;
+    // The current connection listener
     private $listener;
+    // An array of all current TeeTree process objects
     private $processes = array();
-    private $workerPorts = array();
+    // The configured classpath for this instance of the controller ( Note: this is set to be a single directory and MUST be readonly for security reasons )
     protected $classPath;
+    // The configure TeeTree controller p[ort for this instance of the controller
     protected $servicePort;
+    // A logger instance, this defaults to writing to the file configured at TeeTreeConfiguration::TEETREE_SERVER_LOG
     public $TeeTreeLogger;
 
 
+    /**
+     *
+     * Create an instance of the TeeTree Controller
+     * This constructor call will instantiate, configure and start the TeeTree listener and is a BLOCKING call
+     * Controller logging is written by default to the file configured at TeeTreeConfiguration::TEETREE_SERVER_LOG
+     *
+     * @param string $classPath - The absolute path to a readonly directory containing the TeeTree service classes.
+     * @param integer $port - The port number with which to instantiate the controller tcp listener
+     */
     public function __construct($classPath, $port)
     {
         if(!isset($GLOBALS['connections'])) $GLOBALS['connections'] = array();
@@ -29,61 +50,132 @@ class TeeTreeController
         $this->listener = new TeeTreeListener($this, $port);
     }
 
-    public function __destruct()
-    {
-        $this->closeFinishedProcesses();
-    }
-
+    /**
+     *
+     * This method will request shutdown for all processes in the processes array
+     * The shutdown method is called on each of the process objects in order to terminate it.
+     *
+     */
     private function closeFinishedProcesses()
     {
         foreach($this->processes as $key => $process)
         {
-            if(is_resource($process))
+            if($process->shutdown()) unset($this->processes[$key]);
+        }
+    }
+
+    /**
+     *
+     * This method will request the termination of the client service object instances
+     * associated with each of the current processes.
+     * The terminateClient method of each process object is used for this.
+     */
+    public function terminateProcesses()
+    {
+        foreach($this->processes as $key => $process)
+        {
+            if($process->isRunning())
             {
-                $status = proc_get_status($process);
-                if(!$status['running'])
-                {
-                    proc_close($process);
-                    unset($this->processes[$key]);
-                }
+                $process->terminateClient();
+                unset($this->processes[$key]);
             }
         }
     }
 
+    /**
+     *
+     * This method makes the initial connection between a TeeTree service client and a remote service instance
+     * OR if a remote instance of the same class type in the process pool is idle then that will be used instead.
+     *
+     * @param integer $id - This is the event instance id and is used to track each invocation call.
+     * @param string $message - The json encoded message from the TeeTree client instance,
+     *
+     * Note: ALL messages are json encoded instances of the TeeTreeServiceMessage class with a couple of exceptions ( see below for details ).
+     */
     public function makeTee($id, $message)
     {
-        if (is_resource($this->connectTee($id, $pipes)))
+        // decode the request message into an object of stdClass
+        $request = TeeTreeServiceMessage::decode($message);
+
+        // check to see if there is an existing process with the same class type available in the process pool
+        if($process = $this->findWaitingProcess($request->serviceClass))
         {
-            fwrite($pipes[0], $id . "|". (TeeTreeConfiguration::MINIMUM_SERVICE_PORT + $id) .  "|". $message);
-            fclose($pipes[0]);
-            $data = '';
-            do
-            {
-                if(($buffer =  fgets($pipes[1], 2)) === false) break;
-                $data .= $buffer;
-                fputs($GLOBALS['connections'][$id], $buffer);
-                fflush($GLOBALS['connections'][$id]);
-            } while ($buffer != "\n");
-            $this->workerPorts[] = trim($data, "\n");
-            fclose($pipes[1]);
+            // There is a matching process, send back a service port message containing it's service port number to the waiting client instance.
+            $response = new TeeTreeServiceMessage($request->serviceClass , $request->serviceMethod, $process->servicePort, TeeTreeServiceMessage::TEETREE_PORT_MESSAGE);
+            @fputs($GLOBALS['connections'][$id], $response->getEncoded());
+            fflush($GLOBALS['connections'][$id]);
         }
+        // no existing instance, no worries well knock one up now
         else
         {
-            throw new TeeTreeExceptionUnableToMakeTee("Unable to create tee for message :". $message);
+            $tee = $this->connectTee($id, $message, $pipes);
+            if($tee->isRunning())
+            {
+                // send our constructor message from the client to the MakeTee script and pipe back it's service port message to the waiting client instance.
+                fwrite($pipes[0], $id . "|". (TeeTreeConfiguration::MINIMUM_SERVICE_PORT + $id) .  "|". $message);
+                fclose($pipes[0]);
+                $data = '';
+                do
+                {
+                    if(($buffer =  fgets($pipes[1], 2)) === false) break;
+                    $data .= $buffer;
+                    @fputs($GLOBALS['connections'][$id], $buffer);
+                    fflush($GLOBALS['connections'][$id]);
+                } while ($buffer != "\n");
+                fclose($pipes[1]);
+
+            }
+            else
+            {
+                throw new TeeTreeExceptionUnableToMakeTee("Unable to create tee for message :". $message);
+            }
         }
         $this->closeFinishedProcesses();
     }
 
-    private function connectTee($id, &$pipes = array())
+    /**
+     *
+     * This method creates a new instance of the TeeTreeMakeTee script in a new process
+     * The process handle and the port number for this instance are wrapped in a TeeTreeProcess object and stored in the processes array
+     *
+     * @param integer $id - The event instance id
+     * @param string $message - The json encoded constructor request message from the TeeTree client object
+     * @param array $pipes - A reference to an array which will be populated by this call with the pipes opened on the remote service object instance container process.
+     */
+    private function connectTee($id, $message, &$pipes = array())
     {
         $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeMakeTee.php";
         $descriptorspec = array(
         0 => array("pipe", "r"),
         1 => array("pipe", "w"),
-        2 => array("file", TeeTreeConfiguration::DEFAULT_ERROR_LOG, "a"));
-        return $this->processes[$id] = proc_open($command, $descriptorspec, $pipes, null, array("TEETREE_CLASS_PATH" => $this->classPath, "TEETREE_CONTROLLER_PORT" => $this->servicePort));
+        2 => array("file", TeeTreeConfiguration::TEETREE_ERROR_LOG, "a"));
+        $processHandle = @proc_open($command, $descriptorspec, $pipes, null, array("TEETREE_CLASS_PATH" => $this->classPath, "TEETREE_CONTROLLER_PORT" => $this->servicePort));
+        $request = TeeTreeServiceMessage::decode($message);
+        $process = new TeeTreeProcess($id, $processHandle, $request->serviceClass, TeeTreeConfiguration::MINIMUM_SERVICE_PORT + $id);
+        return $this->processes[$id] = $process;
     }
 
+    /**
+     *
+     * Find an idle process instance of the correct class type
+     *
+     * @param string $class - the class type for which to search.
+     */
+    private function findWaitingProcess($class)
+    {
+        foreach($this->processes as $process)
+        {
+            if(($process->serviceClass == $class) && $process->isUsable() ) return $process;
+        }
+        return null;
+    }
+
+    /**
+     *
+     * Enter description here ...
+     * @param unknown_type $classPath
+     * @param unknown_type $port
+     */
     public static function startServer($classPath = __DIR__ , $port = 2000)
     {
         $TeeTreeLogger = new TeeTreeLogger();
@@ -92,20 +184,20 @@ class TeeTreeController
         $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeLauncher.php ". $port. " \"{$classPath}\" start &";
         $descriptorspec = array(
         0 => array("pipe", 'r'),
-        1 => array("file",  TeeTreeConfiguration::DEFAULT_SERVER_LOG, "a"),
-        2 => array("file", TeeTreeConfiguration::DEFAULT_ERROR_LOG, "a"));
-        self::$TeeTreeController = $process = proc_open($command, $descriptorspec, $pipes, null, array("TEETREE_CLASS_PATH" => $classPath, "TEETREE_CONTROLLER_PORT" => $port));
+        1 => array("file",  TeeTreeConfiguration::TEETREE_SERVER_LOG, "a"),
+        2 => array("file", TeeTreeConfiguration::TEETREE_ERROR_LOG, "a"));
+        self::$TeeTreeController = $process = @proc_open($command, $descriptorspec, $pipes, null, array("TEETREE_CLASS_PATH" => $classPath, "TEETREE_CONTROLLER_PORT" => $port));
     }
 
     public static function stopServer($host, $port)
     {
-        if (!($serviceServer = @stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
+        if (!($serviceServer = @stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
         {
             throw new TeeTreeExceptionServerConnectionFailed($errstr);
         }
         else
         {
-            fwrite($serviceServer, "exit\n");
+            @fwrite($serviceServer, "exit\n");
             fflush($serviceServer);
             fclose($serviceServer);
             $TeeTreeLogger = new TeeTreeLogger();
@@ -115,25 +207,25 @@ class TeeTreeController
 
     public static function pingServer($host, $port)
     {
-        if (!($serviceServer = stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, 30, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
+        if (!($serviceServer = @stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
         {
             throw new TeeTreeExceptionServerConnectionFailed($errstr);
         }
         else
         {
             $TeeTreeLogger = new TeeTreeLogger();
-            $TeeTreeLogger->log('Service controller ping on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PING, 'service controller');
-            fwrite($serviceServer, "ping\n");
+            //$TeeTreeLogger->log('Service controller ping on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PING, 'service controller');
+            @fwrite($serviceServer, "ping\n");
             fflush($serviceServer);
             $data = '';
             do
             {
-                $buffer =  fgets($serviceServer, 2);
+                $buffer =  @fgets($serviceServer, 2);
                 $data .= $buffer;
             }while ($buffer != "\n");
             if(preg_match("/^pong\n/", $data))
             {
-                $TeeTreeLogger->log('Service controller pong on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PONG, 'service controller');
+                //$TeeTreeLogger->log('Service controller pong on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PONG, 'service controller');
                 return true;
             }
         }
