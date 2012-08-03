@@ -109,7 +109,7 @@ if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERV
         // now for some parallel processing
         // create and call the same object and method several times, each object instantiated will represent a different remote object
         // and each call will execute consecutively
-        $no_of_iterations = 10;
+        $no_of_iterations = 5;
         for($loop = 0; $loop < $no_of_iterations; $loop++)
         {
             $services[] = $service = new TeeTreeServiceLongRunning($loop);
@@ -128,6 +128,7 @@ if(TeeTreeController::pingServer("localhost", TeeTreeConfiguration::TEETREE_SERV
             $results[] = $services[$loop]->getLastResponse();
         }
         print("MD5:". md5(serialize($results)). "\n");
+        print_r($results);
 
     }
     catch(Exception $ex)

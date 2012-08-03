@@ -5,7 +5,7 @@ base_path=/home/webapps/TeeTree
 php=/usr/local/zend/bin/php
 servicePort=11311
 
-$php $base_path/server/TeeTreeLauncher.php $servicePort $base_path/testServices start &
+##$php $base_path/server/TeeTreeLauncher.php $servicePort $base_path/testServices start &
 
 ## wait a moment to let the server spin up
 sleep 2
@@ -15,5 +15,5 @@ $php $base_path/tests/TeeTreeTest.php
 
 $php $base_path/tests/TeeTreeMultiTest.php
 
-$php $base_path/server/TeeTreeLauncher.php $servicePort $base_path/testServices stop
+##$php $base_path/server/TeeTreeLauncher.php $servicePort $base_path/testServices stop
 

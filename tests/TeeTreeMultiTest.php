@@ -22,15 +22,21 @@ $multi->execute();
 $md5s = array();
 foreach($multi->get_commands() as $command)
 {
-    $md5 = "NO MD5?\n";
+    $md5 = "NO MD5?";
     preg_match("/MD5:(\w+)\n/", $command['response'], $matches);
     if(isset($matches[1]))
     {
         if(!isset($md5s[$matches[1]])) $md5s[$matches[1]] = 0;
         $md5s[$matches[1]]++;
-        print($matches[1]. "\n");
+        $md5 = $matches[1];
+
     }
-    print('.');
+    else
+    {
+        print_r($command['response']);
+    }
+    print('.'. $md5. "\n");
+
 }
 print("\n". print_r($md5s, true). "\n");
 ?>
