@@ -42,17 +42,18 @@ class TeeTreeListener
     {
         do
         {
-            $service_id = self::$serviceId++;
-            $port = TeeTreeConfiguration::MINIMUM_SERVICE_PORT + $service_id;
+            if(self::$serviceId++ >= (TeeTreeConfiguration::MAXIMUM_SERVICE_PORT -  TeeTreeConfiguration::MINIMUM_SERVICE_PORT)) self::$serviceId  = 1;
+            $port = TeeTreeConfiguration::MINIMUM_SERVICE_PORT + self::$serviceId;
             $in_use = self::port_in_use($port);
         }while($in_use);
-        return $service_id;
+        return self::$serviceId;
     }
 
     private static function port_in_use($port)
     {
-        $cmd = "netstat -nl -A inet | awk 'BEGIN {FS=\"[ :]+\"}{print $5}' | grep ". $port;
-        $result = shell_exec($cmd);
+        // Note: stderr is re-directed to /dev/null here to avoid spurious messages should the pipe get rudely interupted.
+        $cmd = "netstat -nl -A inet | grep ". $port. " | awk 'BEGIN {FS=\"[ :]+\"}{print $5}' 2>/dev/null";
+        $result = @shell_exec($cmd);
         return strlen($result) > 0;
     }
 
@@ -80,7 +81,11 @@ class TeeTreeListener
     public static function eventRead($buffer, $id)
     {
         $message = event_buffer_read($buffer, 2046);
-        if(preg_match("/^exit/i", $message)) die();
+        if(preg_match("/^exit/i", $message))
+        {
+            self::$TeeTreeController->terminateProcesses();
+            die();
+        }
         if(preg_match("/^ping/i", $message))
         {
             self::pong($id);
