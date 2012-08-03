@@ -74,8 +74,8 @@ class TeeTreeServiceMessage
 
     public static function decode($json)
     {
-        if(strlen($json) === 0) return null;
-        if($object = json_decode($json))
+        $parts = preg_split("/\n/", $json, -1, PREG_SPLIT_NO_EMPTY);
+        if((strlen($parts[0]) > 0) && ($object = json_decode($json)))
         {
             $message = new self($object->serviceClass, $object->serviceMethod, $object->serviceData, $object->serviceMessageType);
             if($message->serviceMessageType === self::TEETREE_ERROR)
