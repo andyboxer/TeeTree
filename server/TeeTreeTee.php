@@ -23,7 +23,7 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
 
     public function __construct($glom = "0.0.0.0")
     {
-        if(TeeTreeConfiguration::ENABLE_CALL_TRACING) $this->logger = new TeeTreeLogger(TeeTreeConfiguration::CALL_TRACING_LOG);
+        if(TeeTreeConfiguration::ENABLE_CALL_LOGGING) $this->logger = new TeeTreeLogger(TeeTreeConfiguration::TEETREE_CALL_LOG);
         $this->classPath = getenv("TEETREE_CLASS_PATH");
         $this->glom = $glom;
         $this->inPipe = fopen('php://stdin','r');
@@ -106,7 +106,7 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
             {
                 if(is_resource($this->outPipe))
                 {
-                    usleep(100);
+                    usleep(TeeTreeConfiguration::CONSTRUCTOR_RETRY_DELAY * $retry);
                     $messageString = $message->getEncoded();
                     $success = fwrite($this->outPipe, $message->getEncoded(), strlen($message->getEncoded()));
                 }
@@ -120,7 +120,7 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
                 if($this->logger) $this->logger->log("ERROR:". $ex->getMessage());
                 break;
             }
-        }while(!$success && ($retry++ < TeeTreeConfiguration::CONTRUCTOR_MAX_RETRY));
+        }while(!$success && ($retry++ < TeeTreeConfiguration::CONSTRUCTOR_MAX_RETRY));
     }
 
     private function createInstance()
@@ -156,20 +156,20 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
         do
         {
             if($this->logger) $this->logger->log("TeeTree worker waiting");
-            if($this->clientConnection = @stream_socket_accept($this->serviceServer, TeeTreeConfiguration::ACCEPT_TIMEOUT))
+            if($this->clientConnection = @stream_socket_accept($this->serviceServer, TeeTreeConfiguration::ACCEPT_TIMEOUT, $peer))
             {
                 stream_set_timeout($this->clientConnection, TeeTreeConfiguration::READWRITE_TIMEOUT);
                 while(!feof($this->clientConnection))
                 {
                     if($request = $this->readMessage($this->clientConnection))
                     {
-                        if($this->logger) $this->logger->log("TeeTree worker message received : ". $request->getEncoded());
+                        if($this->logger) $this->logger->log("TeeTree worker message received from '{$peer}'\n". $request->getEncoded());
                         $response = $this->executeRequest($request);
                         if($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_CALL_NORETURN
                         && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_FINAL
                         && $response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE)
                         {
-                            if($this->logger) $this->logger->log("TeeTree worker sending response : ". $response->getEncoded());
+                            if($this->logger) $this->logger->log("TeeTree worker sending response to '{$peer}':\n". $response->getEncoded());
                             $this->writeMessage($this->clientConnection, $response);
                         }
                     }
@@ -183,7 +183,7 @@ class TeeTreeTee extends TeeTreeServiceEndpoint
             {
                 break;
             }
-        }while($response->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE);
+        }while($request && $request->serviceMessageType !== TeeTreeServiceMessage::TEETREE_TERMINATE);
         if($this->logger) $this->logger->log("TeeTree worker exiting");
     }
 
