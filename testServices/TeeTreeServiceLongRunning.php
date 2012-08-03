@@ -21,8 +21,10 @@ class TeeTreeServiceLongRunning
         for($i = 0; $i < 10; $i++)
         {
             usleep(200000);
-            file_put_contents(TeeTreeConfiguration::DEFAULT_TEST_LOG, $i. ":". serialize($this->constructParams). ":". serialize($data). "\n", FILE_APPEND);
+            $filename = split(":", $data[0]);
+            $filename = preg_replace("/ /", "", $filename[0]);
+            file_put_contents("/var/log/TeeTree/test_". $filename. ".log", $i. ":". serialize($this->constructParams). ":". serialize($data). "\n", FILE_APPEND);
         }
-        return ("This message will be recived only if the calling client stops to wait for a return value (i.e NORETURN is not set)\nDATA: " . serialize($this->constructParams) . "\n");
+        return "This message will be recived only if the calling client stops to wait for a return value (i.e NORETURN is not set)";
     }
 }
