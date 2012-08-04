@@ -60,11 +60,16 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
         // removed from the constructor parameters before they are passed to the remote constructor
         $this->parseArgs(func_get_args());
 
-        // Now connect to the TeeTree Controller & prepare out remote object instance
-        $this->connectServiceController();
+        // Now connect to the TeeTree Controller & prepare the client proxy object instance
+        // The TeeTree controller will at this point create a remote service instance
 
-        // We can now attempt to connect to the remote object
-        $this->connectService();
+        $retry = 0;
+        do
+        {
+            $this->connectServiceController();
+            $connected = $this->connectService();
+        } while( !$connected && ($retry++ < TeeTreeConfiguration::CONSTRUCTOR_MAX_RETRY));
+        if(!$connected) throw new TeeTreeExceptionServiceClientConnectionFailed("Unable to construct object ". get_called_class());
     }
     /**
      *
@@ -270,15 +275,13 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
      */
     private final function connectService()
     {
-        if(!($serviceConnection = @stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT)))
-        {
-            throw new TeeTreeExceptionServiceClientConnectionFailed("Unable to connect to service at ". $this->buildServiceConnectString(). ". $errstr");
-        }
-        else
+        if($serviceConnection = @stream_socket_client($this->buildServiceConnectString(), $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT))
         {
             stream_set_timeout($serviceConnection, TeeTreeConfiguration::READWRITE_TIMEOUT);
             $this->serviceConnection = $serviceConnection;
+            return true;
         }
+        return false;
     }
 
     /**
