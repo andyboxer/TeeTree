@@ -10,24 +10,25 @@
 class TeeTreeConfiguration
 {
     // the path to the php executable file - this MUST be an absolute path
-    const PATH_TO_PHP_EXE = "/usr/local/zend/bin/php";
+    // However this example assumes that the executable is on the current users path
+    const PATH_TO_PHP_EXE = "php";
 
     // the port on which the TeeTree controller has been configured to listen
     const TEETREE_SERVER_PORT = 11311;
 
-     // the initial value for service instance message channel ports
+    // the initial value for service instance message channel ports
     const MINIMUM_SERVICE_PORT = 22000;
 
-     // the maximum value for service instance message channel ports
+    // the maximum value for service instance message channel ports
     const MAXIMUM_SERVICE_PORT = 48000;
 
-     // maximum size of a TeeTree message, any large than this and you may just be using the wrong mechanism for it's transport.
+    // maximum size of a TeeTree message, any large than this and you may just be using the wrong mechanism for it's transport.
     const MAX_MESSAGE_SIZE = 1000000;
 
     // socket accept timeout for all socket listeners
     const ACCEPT_TIMEOUT = 120;
 
-     // timeout for socket read and write operations
+    // timeout for socket read and write operations
     const READWRITE_TIMEOUT = 30;
 
     // timeout for connection to the TeeTree controller
@@ -36,7 +37,7 @@ class TeeTreeConfiguration
     // The maximum number of times to try and send a constructor response back on a TeeTree controller pipe.
     const CONSTRUCTOR_MAX_RETRY = 5;
 
-     // The delay in microseconds to wait before retrying a constructor call
+    // The delay in microseconds to wait before retrying a constructor call
     const CONSTRUCTOR_RETRY_DELAY = 500;
 
     // The minimum time before a TeeTree remote service instance may be re-used
@@ -64,7 +65,7 @@ class TeeTreeConfiguration
     // This is parameter for the use of the test scripts only it will have no meaning for nor effect upon the operation of the TeeTree RSI
     const DEFAULT_TEST_LOG = "/var/log/TeeTree/TeeTreeTest.log";        // the test service output log
 
-     // This is parameter for the use of this example project only it will have no meaning for nor effect upon the operation of the TeeTree RSI
+    // This is parameter for the use of this example project only it will have no meaning for nor effect upon the operation of the TeeTree RSI
     const EXAMPLE_DEBUG_LOG = "/var/log/TeeTree/exampleServiceClass.log";       // the path to the Example debugging log
 }
 ?>
