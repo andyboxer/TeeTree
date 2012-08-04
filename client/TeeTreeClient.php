@@ -64,6 +64,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
         // The TeeTree controller will at this point create a remote service instance
 
         $retry = 0;
+        $connected = false;
         do
         {
             try
