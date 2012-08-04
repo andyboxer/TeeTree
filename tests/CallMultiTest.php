@@ -9,29 +9,34 @@
 require_once __DIR__. "/../testServices/TeeTreeConfiguration.php";
 require_once __DIR__ . "/../bootstrap/TeeTreeBootStrap.php";
 
-$multi = new multi_command();
+// set loops to continually hammer the server
+$loops = 20;
 
-$start = time();
-
-for($i = 0; $i < 200; $i++)
+for($j = 0; $j < $loops; $j++)
 {
-    $command = TeeTreeConfiguration::PATH_TO_PHP_EXE . " ". __DIR__. "/CallLimitTest.php ". $i;
-    $multi->add_command($command);
-}
+    $multi = new multi_command();
+    $start = time();
 
-$multi->execute();
-$errors = array();
-$count = 0;
-foreach($multi->get_commands() as $command)
-{
-    if(preg_match("/ERROR/", $command['response']))
+    for($i = 0; $i < 200; $i++)
     {
-        $errors[] = $command['response'];
+        $command = TeeTreeConfiguration::PATH_TO_PHP_EXE . " ". __DIR__. "/CallLimitTest.php ". $i;
+        $multi->add_command($command);
     }
-    if(preg_match("/RESULTS/", $command['response'])) $count++;
-    print_r($command['response']);
+
+    $multi->execute();
+    $errors = array();
+    $count = 0;
+    foreach($multi->get_commands() as $command)
+    {
+        if(preg_match("/ERROR/", $command['response']))
+        {
+            $errors[] = $command['response'];
+        }
+        if(preg_match("/RESULTS/", $command['response'])) $count++;
+        //print_r($command['response']);
+    }
+    //print_r($errors);
+    print("Total thread = ". $count. " run time = ". (time() - $start). " seconds\n");
 }
-print_r($errors);
-print("Total thread = ". $count. " run time = ". (time() - $start). " seconds\n");
 ?>
 
