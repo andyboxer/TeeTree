@@ -173,9 +173,9 @@ class TeeTreeController
 
     /**
      *
-     * Enter description here ...
-     * @param unknown_type $classPath
-     * @param unknown_type $port
+     * Static method to enable scripted start of the TeeTree controller
+     * @param string $classPath - The path to the service class directory
+     * @param integer $port - The port on which the controller should listen
      */
     public static function startServer($classPath = __DIR__ , $port = 2000)
     {
@@ -190,47 +190,63 @@ class TeeTreeController
         self::$TeeTreeController = $process = @proc_open($command, $descriptorspec, $pipes, null, array("TEETREE_CLASS_PATH" => $classPath, "TEETREE_CONTROLLER_PORT" => $port));
     }
 
+    /**
+     *
+     * Static method to enable scripted stop of the TeeTree controller
+     * @param string $host - The host name / ip address of the TeeTree controller host
+     * @param string $port - The port on which the TeeTree controller is listening
+     *
+     * @throws TeeTreeExceptionServerConnectionFailed
+     */
     public static function stopServer($host, $port)
     {
-        if (!($serviceServer = @stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
-        {
-            throw new TeeTreeExceptionServerConnectionFailed($errstr);
-        }
-        else
-        {
-            @fwrite($serviceServer, "exit\n");
-            fflush($serviceServer);
-            fclose($serviceServer);
-            $TeeTreeLogger = new TeeTreeLogger();
-            $TeeTreeLogger->log('Service controller stopped on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_STOP, 'service controller');
-        }
+        $serviceServer = self::openControllerConnection($host, $port);
+        @fwrite($serviceServer, "exit\n");
+        fflush($serviceServer);
+        fclose($serviceServer);
+        $TeeTreeLogger = new TeeTreeLogger();
+        $TeeTreeLogger->log('Service controller stopped on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_STOP, 'service controller');
     }
 
+    /**
+     *
+     * Static method to enable scripted heartbeat testing of a running TeeTree controller instance
+     * @param string $host - The host name / IP adddress of the TeeTree controller host
+     * @param integer $port - The port on which the TeeTree controller is listening
+     *
+     * @throws TeeTreeExceptionServerConnectionFailed
+     */
     public static function pingServer($host, $port)
     {
-        if (!($serviceServer = @stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT)))
+        $serviceServer = self::openControllerConnection($host, $port);
+        $TeeTreeLogger = new TeeTreeLogger();
+        //$TeeTreeLogger->log('Service controller ping on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PING, 'service controller');
+        @fwrite($serviceServer, "ping\n");
+        fflush($serviceServer);
+        $data = '';
+        do
         {
-            throw new TeeTreeExceptionServerConnectionFailed($errstr);
-        }
-        else
+            $buffer =  @fgets($serviceServer, 2);
+            $data .= $buffer;
+        }while ($buffer != "\n");
+        if(preg_match("/^pong\n/", $data))
         {
-            $TeeTreeLogger = new TeeTreeLogger();
-            //$TeeTreeLogger->log('Service controller ping on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PING, 'service controller');
-            @fwrite($serviceServer, "ping\n");
-            fflush($serviceServer);
-            $data = '';
-            do
-            {
-                $buffer =  @fgets($serviceServer, 2);
-                $data .= $buffer;
-            }while ($buffer != "\n");
-            if(preg_match("/^pong\n/", $data))
-            {
-                //$TeeTreeLogger->log('Service controller pong on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PONG, 'service controller');
-                return true;
-            }
+            //$TeeTreeLogger->log('Service controller pong on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PONG, 'service controller');
+            return true;
         }
         return false;
+    }
+
+    private static function openControllerConnection($host, $port)
+    {
+        $retry = 0;
+        do
+        {
+            $serviceServer = @stream_socket_client('tcp://'. $host. ':'. $port, $errno, $errstr, TeeTreeConfiguration::CLIENT_CONNECT_TIMEOUT, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT);
+
+        } while( !$serviceServer  && ($retry++ < TeeTreeConfiguration::CONSTRUCTOR_MAX_RETRY));
+        if(!$serviceServer) throw new TeeTreeExceptionServerConnectionFailed($errstr);
+        return $serviceServer;
     }
 }
 ?>
