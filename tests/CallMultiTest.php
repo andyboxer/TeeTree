@@ -9,8 +9,10 @@
 require_once __DIR__. "/../testServices/TeeTreeConfiguration.php";
 require_once __DIR__ . "/../bootstrap/TeeTreeBootStrap.php";
 
-// set loops to continually hammer the server
-$loops = 20;
+// set loops to continually hammer the server call this script with a numeric argument in order to set the number of iterations.
+$loops = ((isset($argv[1])) ? $argv[1] : 20);
+// record test start time
+$testStart = time();
 
 for($j = 0; $j < $loops; $j++)
 {
@@ -38,5 +40,8 @@ for($j = 0; $j < $loops; $j++)
     //print_r($errors);
     print("Total thread = ". $count. " run time = ". (time() - $start). " seconds\n");
 }
+
+print("Total runtime = ". (time() - $testStart). " seconds\n");
+
 ?>
 

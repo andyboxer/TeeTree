@@ -182,7 +182,7 @@ class TeeTreeController
         $TeeTreeLogger = new TeeTreeLogger();
         $TeeTreeLogger->log('Service controller starting on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_START, 'service controller');
 
-        $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeLauncher.php ". $port. " \"{$classPath}\" start &";
+        $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeAdmin.php boot ". $port. " \"{$classPath}\" &";
         $descriptorspec = array(
         0 => array("pipe", 'r'),
         1 => array("file",  TeeTreeConfiguration::TEETREE_SERVER_LOG, "a"),
@@ -200,12 +200,19 @@ class TeeTreeController
      */
     public static function stopServer($host, $port)
     {
+        try
+        {
         $serviceServer = self::openControllerConnection($host, $port);
         @fwrite($serviceServer, "exit\n");
         fflush($serviceServer);
         fclose($serviceServer);
         $TeeTreeLogger = new TeeTreeLogger();
         $TeeTreeLogger->log('Service controller stopped on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_STOP, 'service controller');
+        }
+        catch(TeeTreeException $ttex)
+        {
+            return false;
+        }
     }
 
     /**
@@ -218,23 +225,30 @@ class TeeTreeController
      */
     public static function pingServer($host, $port)
     {
-        $serviceServer = self::openControllerConnection($host, $port);
-        $TeeTreeLogger = new TeeTreeLogger();
-        //$TeeTreeLogger->log('Service controller ping on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PING, 'service controller');
-        @fwrite($serviceServer, "ping\n");
-        fflush($serviceServer);
-        $data = '';
-        do
+        try
         {
-            $buffer =  @fgets($serviceServer, 2);
-            $data .= $buffer;
-        }while ($buffer != "\n");
-        if(preg_match("/^pong\n/", $data))
-        {
-            //$TeeTreeLogger->log('Service controller pong on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PONG, 'service controller');
-            return true;
+            $serviceServer = self::openControllerConnection($host, $port);
+            $TeeTreeLogger = new TeeTreeLogger();
+            //$TeeTreeLogger->log('Service controller ping on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PING, 'service controller');
+            @fwrite($serviceServer, "ping\n");
+            fflush($serviceServer);
+            $data = '';
+            do
+            {
+                $buffer =  @fgets($serviceServer, 2);
+                $data .= $buffer;
+            }while ($buffer != "\n");
+            if(preg_match("/^pong\n/", $data))
+            {
+                //$TeeTreeLogger->log('Service controller pong on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PONG, 'service controller');
+                return true;
+            }
+            return false;
         }
-        return false;
+        catch(TeeTreeException $ttex)
+        {
+            return false;
+        }
     }
 
     private static function openControllerConnection($host, $port)
@@ -247,6 +261,13 @@ class TeeTreeController
         } while( !$serviceServer  && ($retry++ < TeeTreeConfiguration::CONSTRUCTOR_MAX_RETRY));
         if(!$serviceServer) throw new TeeTreeExceptionServerConnectionFailed($errstr);
         return $serviceServer;
+    }
+
+    public static function getActiveServiceListenerCount()
+    {
+        $cmd = "netstat -nap --inet --tcp 2> /dev/null | grep LISTEN | grep php | grep [234][2-9][0-9][0-9][0-9] | wc -l";
+        $response = @shell_exec($cmd);
+        return trim($response, "\n ");
     }
 }
 ?>
