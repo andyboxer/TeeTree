@@ -66,8 +66,15 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
         $retry = 0;
         do
         {
-            $this->connectServiceController();
-            $connected = $this->connectService();
+            try
+            {
+                $this->connectServiceController();
+                $connected = $this->connectService();
+            }
+            catch(TeeTreeException $ttex)
+            {
+                // ignore connection errors and retry
+            }
         } while( !$connected && ($retry++ < TeeTreeConfiguration::CONSTRUCTOR_MAX_RETRY));
         if(!$connected) throw new TeeTreeExceptionServiceClientConnectionFailed("Unable to construct object ". get_called_class());
     }
