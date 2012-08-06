@@ -11,6 +11,7 @@ require_once __DIR__ . "/../bootstrap/TeeTreeBootStrap.php";
 
 // set loops to continually hammer the server call this script with a numeric argument in order to set the number of iterations.
 $loops = ((isset($argv[1])) ? $argv[1] : 20);
+$iterations = ((isset($argv[2])) ? $argv[2] : 200);
 // record test start time
 $testStart = time();
 
@@ -19,7 +20,7 @@ for($j = 0; $j < $loops; $j++)
     $multi = new multi_command();
     $start = time();
 
-    for($i = 0; $i < 200; $i++)
+    for($i = 0; $i < $iterations; $i++)
     {
         $command = TeeTreeConfiguration::PATH_TO_PHP_EXE . " ". __DIR__. "/CallLimitTest.php ". $i;
         $multi->add_command($command);
