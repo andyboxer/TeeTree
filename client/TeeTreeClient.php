@@ -265,7 +265,7 @@ class TeeTreeClient extends TeeTreeServiceEndpoint
             if($this->servicePort === null)
             {
                 if(is_resource($serviceController)) stream_socket_shutdown($serviceController, STREAM_SHUT_WR);
-                throw new TeeTreeExceptionBadPortNo("Service port message not recieved as response from constructor: ". $response->getEncoded());
+                throw new TeeTreeExceptionBadPortNo("Service port message not recieved as response from constructor: ". serialize($response));
             }
             if(is_resource($serviceController)) stream_socket_shutdown($serviceController, STREAM_SHUT_WR);
         }
