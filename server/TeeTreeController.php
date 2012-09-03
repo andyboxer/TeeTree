@@ -68,7 +68,7 @@ class TeeTreeController
      *
      * This method will request the termination of the client service object instances
      * associated with each of the current processes.
-     * The terminateClient method of each process object is used for this.
+     * It will then force the shutdown of any running worker processes.
      */
     public function terminateProcesses()
     {
@@ -77,6 +77,7 @@ class TeeTreeController
             if($process->isRunning())
             {
                 $process->terminateClient();
+                $process->shutdown(true);
                 unset($this->processes[$key]);
             }
         }
@@ -179,9 +180,6 @@ class TeeTreeController
      */
     public static function startServer($classPath = __DIR__ , $port = 2000)
     {
-        $TeeTreeLogger = new TeeTreeLogger();
-        $TeeTreeLogger->log('Service controller starting on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_START, 'service controller');
-
         $command = TeeTreeConfiguration::PATH_TO_PHP_EXE. " " . __DIR__ . "/TeeTreeAdmin.php boot ". $port. " \"{$classPath}\" &";
         $descriptorspec = array(
         0 => array("pipe", 'r'),
@@ -202,12 +200,10 @@ class TeeTreeController
     {
         try
         {
-        $serviceServer = self::openControllerConnection($host, $port);
-        @fwrite($serviceServer, "exit\n");
-        fflush($serviceServer);
-        fclose($serviceServer);
-        $TeeTreeLogger = new TeeTreeLogger();
-        $TeeTreeLogger->log('Service controller stopped on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_STOP, 'service controller');
+            $serviceServer = self::openControllerConnection($host, $port);
+            @fwrite($serviceServer, "exit\n");
+            fflush($serviceServer);
+            fclose($serviceServer);
         }
         catch(TeeTreeException $ttex)
         {
@@ -228,8 +224,6 @@ class TeeTreeController
         try
         {
             $serviceServer = self::openControllerConnection($host, $port);
-            $TeeTreeLogger = new TeeTreeLogger();
-            //$TeeTreeLogger->log('Service controller ping on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PING, 'service controller');
             @fwrite($serviceServer, "ping\n");
             fflush($serviceServer);
             $data = '';
@@ -240,7 +234,6 @@ class TeeTreeController
             }while ($buffer != "\n");
             if(preg_match("/^pong\n/", $data))
             {
-                //$TeeTreeLogger->log('Service controller pong on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_PONG, 'service controller');
                 return true;
             }
             return false;
