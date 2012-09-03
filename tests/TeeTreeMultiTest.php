@@ -11,6 +11,8 @@ require_once __DIR__ . "/../bootstrap/TeeTreeBootStrap.php";
 
 $multi = new multi_command();
 
+print("Running mulitple requests in parallel ...\n");
+
 for($i = 0; $i < 50; $i++)
 {
    $command = TeeTreeConfiguration::PATH_TO_PHP_EXE . " ". __DIR__. "/TeeTreeTest.php ". $i;
