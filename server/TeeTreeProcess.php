@@ -46,12 +46,12 @@ class TeeTreeProcess extends TeeTreeServiceEndpoint
         }
     }
 
-    public function shutdown()
+    public function shutdown($force = false)
     {
         if(is_resource($this->processHandle))
         {
             $status = proc_get_status($this->processHandle);
-            if(!$status['running'])
+            if((!$status['running']) || $force)
             {
                 @proc_close($this->processHandle);
                 return true;
