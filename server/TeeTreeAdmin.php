@@ -7,33 +7,20 @@
  *
  */
 
-// First ensure that it is our version of TeeTreeConfiguration that loads first
-require_once( __DIR__. "/../testServices/TeeTreeConfiguration.php");
-
 // Now we call the bootstrap to setup the TeeTree environment ( I think I'll call this a Kettle :)
 require_once( __DIR__. "/../bootstrap/TeeTreeBootStrap.php");
 
 $command = (isset($argv[1])) ? $argv[1] : '';
+list($port, $classPath) = TeeTreeParseStartupParams($argv);
 
 switch($command)
 {
     case 'boot':
-         // Check to see if we have class path and port parameters to process
-        $classPath = '';
-        $port = 0;
-        if(count($argv) === 3)
-        {
-            $classPath = $argv[1];
-            $port = $argv[2];
-        }
-        $classPath = ($classPath === '') ? TeeTreeConfiguration::TEETREE_SERVICE_CLASS_PATH : $classPath;
-        $port = ($port === 0) ? TeeTreeConfiguration::TEETREE_SERVER_PORT : $port;
 
-        // Now we can get started and kick off the TeeTree Controller process
-        print("TeeTree controller starting  on port {$port} ...\n");
         // We start the service controller passing a port nunber and the class path to our services classes ( This is strictly one directory intentionally and must be r/o )
         try
         {
+            requireConfig($classPath);
             $controller = new TeeTreeController($classPath, $port);
         }
         catch(TeeTreeException $ex)
@@ -44,46 +31,75 @@ switch($command)
         break;
 
     case "start":
-        // Check to see if we have class path and port parameters to process
-        $classPath = '';
-        $port = 0;
-        if(count($argv) === 3)
-        {
-            $classPath = $argv[1];
-            $port = $argv[2];
-        }
-        $classPath = ($classPath === '') ? TeeTreeConfiguration::TEETREE_SERVICE_CLASS_PATH : $classPath;
-        $port = ($port === 0) ? TeeTreeConfiguration::TEETREE_SERVER_PORT : $port;
 
+        requireConfig($classPath);
         // Now we can get started and kick off the TeeTree Controller process
-        print("TeeTree controller starting ...\n");
+        print("TeeTree controller starting  on port {$port} ...\n");
         // We start the service controller passing a port nunber and the class path to our services classes ( This is strictly one directory intentionally and must be r/o )
         TeeTreeController::startServer($classPath, $port);
         // This process will now continue untill the TeeTreeController::stopServer call is made using the same port no.
-    break;
+        break;
 
     case "count":
         // Return a count of the total number of listening remote service instances
         $count = TeeTreeController::getActiveServiceListenerCount();
         print("TeeTree active remote service instance servers = {$count}\n");
-    break;
+        break;
 
     case "ping":
         // Return a count of the total number of listening remote service instances
-        $pong = TeeTreeController::pingServer('localhost', TeeTreeConfiguration::TEETREE_SERVER_PORT);
+        $pong = TeeTreeController::pingServer('localhost',$port);
         print("TeeTree controller says '". (($pong) ? "ere I am" : "Tee who?"). "'\n");
-    break;
+        break;
 
     case "stop":
+
+        requireConfig($classPath);
         // So we want to bail, kill the server
-        TeeTreeController::stopServer('localhost', TeeTreeConfiguration::TEETREE_SERVER_PORT);
+        print("TeeTree controller shutting down  on port {$port} ...\n");
+        TeeTreeController::stopServer('localhost', $port);
         print("TeeTree controller stopped ...\n");
-    break;
+        break;
 
     default:
-        print("Usage: php ControllerLauncher.php start|stop|count|ping\n");
-    break;
+        print("Usage: php TeeTreeAdmin.php start|stop|count|ping\n");
+        break;
 
+}
+
+function TeeTreeParseStartupParams($argv)
+{
+    // Getparams from the enironment if set
+    $classPath = getenv("TEETREE_CLASS_PATH");
+    $port = getenv("TEETREE_CONTROLLER_PORT");
+    // if not set then try to get them from script parameters
+    if(!($classPath && $port))
+    {
+        if(count($argv) === 4)
+        {
+            $classPath = $argv[2];
+            $port = $argv[3];
+        }
+        else
+        {
+            // Last chance try and pick them up from the config file if available
+            $classPath = (!$classPath) ? TeeTreeConfiguration::TEETREE_SERVICE_CLASS_PATH : $classPath;
+            $port = (!$port) ? TeeTreeConfiguration::TEETREE_SERVER_PORT : $port;
+        }
+    }
+    return array($port, $classPath);
+}
+
+function requireConfig($classPath)
+{
+    if(file_exists($classPath. "/TeeTreeConfiguration.php"))
+    {
+        require_once $classPath. "/TeeTreeConfiguration.php";
+    }
+    else
+    {
+        print("Unable to find TeeTreeConfiguration file '". $classPath. "/TeeTreeConfiguration.php'. Service cannot start");
+    }
 }
 
 ?>
