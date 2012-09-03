@@ -16,6 +16,9 @@ class TeeTreeConfiguration
     // the port on which the TeeTree controller has been configured to listen
     const TEETREE_SERVER_PORT = 11311;
 
+     // the host to which the TeeTree clients will connect for testing
+    const TEETREE_SERVER_HOST = "10.163.1.3";
+
     // the initial value for service instance message channel ports
     const MINIMUM_SERVICE_PORT = 22000;
 

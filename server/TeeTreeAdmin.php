@@ -48,8 +48,8 @@ switch($command)
 
     case "ping":
         // Return a count of the total number of listening remote service instances
-        $pong = TeeTreeController::pingServer('localhost',$port);
-        print("TeeTree controller says '". (($pong) ? "ere I am" : "Tee who?"). "'\n");
+        $pong = TeeTreeController::pingServer(TeeTreeConfiguration::TEETREE_SERVER_HOST,$port);
+        print("TeeTree controller says '{$pong}'\n");
         break;
 
     case "stop":
@@ -57,7 +57,7 @@ switch($command)
         requireConfig($classPath);
         // So we want to bail, kill the server
         print("TeeTree controller shutting down  on port {$port} ...\n");
-        TeeTreeController::stopServer('localhost', $port);
+        TeeTreeController::stopServer(TeeTreeConfiguration::TEETREE_SERVER_HOST, $port);
         print("TeeTree controller stopped ...\n");
         break;
 
