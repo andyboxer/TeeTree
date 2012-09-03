@@ -82,9 +82,8 @@ function TeeTreeParseStartupParams($argv)
         }
         else
         {
-            // Last chance try and pick them up from the config file if available
-            $classPath = (!$classPath) ? TeeTreeConfiguration::TEETREE_SERVICE_CLASS_PATH : $classPath;
-            $port = (!$port) ? TeeTreeConfiguration::TEETREE_SERVER_PORT : $port;
+            print("Missing class path or port, Service cannot start");
+            die();
         }
     }
     return array($port, $classPath);
@@ -99,6 +98,7 @@ function requireConfig($classPath)
     else
     {
         print("Unable to find TeeTreeConfiguration file '". $classPath. "/TeeTreeConfiguration.php'. Service cannot start");
+        die();
     }
 }
 
