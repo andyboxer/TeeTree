@@ -9,9 +9,10 @@
 
 /**
  *
- * This class provides an autloader for the TeeTree object classes require to run the TeeTree client and server
+ * This class provides an autloader for the TeeTree object classes required to run the TeeTree client and server
  *
  */
+
 class TeeTreeBootStrap
 {
     // This stores the home directory for this TeeTree installation.
