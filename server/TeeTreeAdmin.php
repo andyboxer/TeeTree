@@ -57,7 +57,8 @@ switch($command)
         requireConfig($classPath);
         // So we want to bail, kill the server
         print("TeeTree controller shutting down  on port {$port} ...\n");
-        TeeTreeController::stopServer(TeeTreeConfiguration::TEETREE_SERVER_HOST, $port);
+        // We should only shutdown a local service this way
+        TeeTreeController::stopServer('localhost', $port);
         print("TeeTree controller stopped ...\n");
         break;
 
