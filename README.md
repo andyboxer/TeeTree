@@ -12,7 +12,9 @@ TeeTree is built using PHP CE 5.3 and replies upon the libevent module - <http:/
 
 In order to install and run TeeTree you will need to clone this repo to \<\<somewhere\>\> on each of your client and server machines.
 
-The configuration is kept in a static const model for speed of execution. Paths and timeout limits should be set in the config/TeeTreeConfiguration.php file for the given environment.
+The configuration is kept in a static const model for speed of execution. You should edit the TeeTreeConfiguration to suit your environment.
+
+Paths and timeout limits should be set in the config/TeeTreeConfiguration.php file for the deployment environment. 
 
 If your TeeTree installation is at \<\<somewhere\>\> and your php executable at \<\<php\>\> then in order to launch the TeeTreeController process one should execute the following:
 
@@ -24,8 +26,11 @@ Both of these parameters may bet set to suit your needs/environments, please NOT
 
 ### Tests
 
-In order to run the test script first ensure the correct path to the php executable is set in the TeeTreeConfiguration.php file, that the directory /var/log/TeeTree exists and is writeable for all 
-and that the base and php variables in the tests/runTests.sh file are correctly set for your environment.
+Before running the test scripts you should check the following:
+
+* The path to the php executable is set in the TeeTreeConfiguration.php file
+* The directory /var/log/TeeTree exists and is writeable for all 
+* The base and php variables in the tests/runTests.sh file are correctly set for your environment.
 
 From a command line execute the runTests.sh script, test results will be printed to stdout and diagnostic data will be written to the logs in the /var/log/TeeTree directory.
 
@@ -33,4 +38,4 @@ All tests will run using hostname localhost and port 11311, unless configured ot
 
 ### Quick Start
 
-In order to get you off the ground quickly with TeeTree a fully functional example application with brief documentation may be found at <https://github.com/andyboxer/TeeTreeExample>
+An example with full instructions to get you off the ground quickly with TeeTree may be found at <https://github.com/andyboxer/TeeTreeExample>

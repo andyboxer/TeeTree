@@ -18,14 +18,19 @@ class TeeTreeController
 {
     // A static singleton instance of the TeeTree controller
     private static $TeeTreeController = null;
+
     // The current connection listener
     private $listener;
+
     // An array of all current TeeTree process objects
     private $processes = array();
+
     // The configured classpath for this instance of the controller ( Note: this is set to be a single directory and MUST be readonly for security reasons )
     protected $classPath;
-    // The configure TeeTree controller p[ort for this instance of the controller
+
+    // The TeeTree controller port for this instance of the controller
     protected $servicePort;
+
     // A logger instance, this defaults to writing to the file configured at TeeTreeConfiguration::TEETREE_SERVER_LOG
     public $TeeTreeLogger;
 
@@ -48,6 +53,15 @@ class TeeTreeController
         $this->TeeTreeLogger = new TeeTreeLogger();
         $this->TeeTreeLogger->log('Service controller started on port '. $port, TeeTreeLogger::SERVICE_CONTROLLER_START, 'service controller');
         $this->listener = new TeeTreeListener($this, $port);
+    }
+
+    /**
+     * When this terminates log the exit and try to tidy up before we quit
+     */
+    public function __destruct()
+    {
+        $this->TeeTreeLogger->log('Service controller shutdown on port '. $this->servicePort, TeeTreeLogger::SERVICE_CONTROLLER_STOP, 'service controller');
+        $this->closeFinishedProcesses();
     }
 
     /**
