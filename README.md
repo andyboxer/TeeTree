@@ -7,6 +7,7 @@ The TeeTree remote service invocation mechanism has been implemented entirely in
 ### Pre-requisites
 
 TeeTree is built using PHP CE 5.3 and replies upon the libevent module - <http://php.net/manual/en/book.libevent.php>
+* <b>Note: You may need to install the libevent libraries onto the deployment machine ( for ubuntu "apt_get install libevent-dev" ).</b>
 
 ### Installation
 
